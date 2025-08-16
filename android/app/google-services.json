@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "594181132108",
+    "project_id": "jq4b-memv-2024-alm",
+    "storage_bucket": "jq4b-memv-2024-alm.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:594181132108:android:9369e23f1b47d2c5b909e9",
+        "android_client_info": {
+          "package_name": "com.example.app_jq7b"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7KY43D_rvINB_13u2pioV12rju7TlpeQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:594181132108:android:138ea95ad36dc7feb909e9",
+        "android_client_info": {
+          "package_name": "com.example.inventario_proyecto"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7KY43D_rvINB_13u2pioV12rju7TlpeQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
