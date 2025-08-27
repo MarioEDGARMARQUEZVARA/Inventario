@@ -64,7 +64,7 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFEAF1FB),
+      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
@@ -85,7 +85,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         // Icono superior
                         CircleAvatar(
                           radius: 32,
-                          backgroundColor: const Color(0xFF1976F8),
+                          backgroundColor: const Color.fromARGB(255, 25, 118, 248),
                           child: Icon(Icons.inventory_2_rounded, size: 38, color: Colors.white),
                         ),
                         const SizedBox(height: 18),
@@ -159,7 +159,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                 width: double.infinity,
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF1976F8),
+                                    backgroundColor: const Color.fromARGB(255, 25, 118, 248),
                                     foregroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(7),
@@ -184,7 +184,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                   _isLogin
                                       ? "¿No tienes cuenta? Regístrate"
                                       : "¿Ya tienes cuenta? Inicia sesión",
-                                  style: const TextStyle(color: Color(0xFF1976F8)),
+                                  style: const TextStyle(color: Color.fromARGB(255, 25, 118, 248)),
                                 ),
                               ),
                             ],
@@ -195,28 +195,8 @@ class _AuthScreenState extends State<AuthScreen> {
                         Container(
                           width: double.infinity,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF3F7FF),
+                            color: const Color.fromARGB(255, 255, 255, 255),
                             borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                          child: const Text.rich(
-                            TextSpan(
-                              text: 'Demo: ',
-                              style: TextStyle(
-                                color: Color(0xFF1976F8),
-                                fontWeight: FontWeight.bold,
-                              ),
-                              children: [
-                                TextSpan(
-                                  text: 'Usa cualquier email y contraseña para acceder',
-                                  style: TextStyle(
-                                    color: Colors.black54,
-                                    fontWeight: FontWeight.normal,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            textAlign: TextAlign.center,
                           ),
                         ),
                       ],
