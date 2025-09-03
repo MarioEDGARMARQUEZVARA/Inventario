@@ -30,7 +30,6 @@ class MainApp extends StatelessWidget {
       builder: FlutterSmartDialog.init(),
       routes: {
         '/': (context) => const AuthWrapper(),
-        // '/transaction': (context) => TransactionScreen(),
       },
       initialRoute: '/',
     );
