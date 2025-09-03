@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:inventario_proyecto/services/transformadores_service.dart';
+import 'package:inventario_proyecto/services/mantenimiento_service.dart';
+import 'package:inventario_proyecto/models/mantenimiento.dart';
+import 'package:inventario_proyecto/screens/mantenimiento_operations_screen.dart';
 import 'package:inventario_proyecto/widgets/main_drawer.dart';
 
 class MantenimientoScreen extends StatefulWidget {
@@ -10,12 +12,7 @@ class MantenimientoScreen extends StatefulWidget {
 }
 
 class _MantenimientoScreenState extends State<MantenimientoScreen> {
-  @override
-  Widget build(BuildContext context) {
-    return Container();
-  }
-}
-final TransformadoresService _service = TransformadoresService();
+  final MantenimientoService _service = MantenimientoService();
 
   @override
   Widget build(BuildContext context) {
@@ -31,62 +28,47 @@ final TransformadoresService _service = TransformadoresService();
         elevation: 0,
       ),
       body: StreamBuilder<List<Map<String, dynamic>>>(
-        stream: _service.getTransformadoresStream(),
+        stream: _service.getMantenimientoStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(child: Text('Error: [${snapshot.error}'));
           }
-          final transformadores = snapshot.data ?? [];
-          if (transformadores.isEmpty) {
+          final data = snapshot.data ?? [];
+          if (data.isEmpty) {
             return const Center(child: Text('No hay reportes de mantenimiento registrados.'));
           }
+          final mantenimientos = data.map((e) => Mantenimiento.fromMap(e)).toList();
           return Column(
             children: [
-              // Encabezado de lista (primer transformador)
-              Container(
-                color: Colors.grey[300],
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      transformadores[0]['nombre'] ?? 'Sin nombre',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    Text(
-                      'Estado: ${transformadores[0]['estado'] ?? 'Desconocido'}',
-                      style: const TextStyle(
-                        color: Colors.black54,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Lista de transformadores (si hay más de uno)
               Expanded(
                 child: ListView.builder(
-                  itemCount: transformadores.length > 1 ? transformadores.length - 1 : 0,
+                  itemCount: mantenimientos.length,
                   itemBuilder: (context, index) {
-                    final t = transformadores[index + 1];
+                    final m = mantenimientos[index];
                     return ListTile(
                       title: Text(
-                        t['nombre'] ?? 'Sin nombre',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        m.numero_mantenimiento.toString(),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                       ),
-                      subtitle: Text('Estado: ${t['estado'] ?? 'Desconocido'}'),
+                      subtitle: Text(
+                        'Estado: ${m.estado}',
+                        style: const TextStyle(color: Colors.grey, fontSize: 14),
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => MantenimientoOperationsScreen(mantenimiento: m),
+                          ),
+                        );
+                      },
                     );
                   },
                 ),
               ),
-              // Botón exportar
               Padding(
                 padding: const EdgeInsets.only(bottom: 32.0),
                 child: SizedBox(
@@ -100,7 +82,7 @@ final TransformadoresService _service = TransformadoresService();
                       ),
                     ),
                     onPressed: () {
-                      
+                      // Exportar a xlsx
                     },
                     child: const Text(
                       'Exportar a xlsx',
@@ -116,9 +98,10 @@ final TransformadoresService _service = TransformadoresService();
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF2196F3),
         onPressed: () {
-       
+          // Acción para agregar nuevo mantenimiento
         },
         child: const Icon(Icons.add, size: 32),
       ),
     );
   }
+}

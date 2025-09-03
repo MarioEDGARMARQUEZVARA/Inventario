@@ -35,7 +35,7 @@ class PrincipalScreen extends StatelessWidget {
           children: [
             const SizedBox(height: 48),
             Text(
-              'Bienvenido, @$userName',
+              'Bienvenido, $userName',
               style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
