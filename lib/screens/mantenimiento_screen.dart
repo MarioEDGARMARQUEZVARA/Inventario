@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:inventario_proyecto/services/mantenimiento_service.dart';
 import 'package:inventario_proyecto/models/mantenimiento.dart';
 import 'package:inventario_proyecto/screens/mantenimiento_operations_screen.dart';
+import 'package:inventario_proyecto/screens/mantenimiento_add_screen.dart';
 import 'package:inventario_proyecto/widgets/main_drawer.dart';
 
 class MantenimientoScreen extends StatefulWidget {
@@ -48,23 +49,30 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
                   itemCount: mantenimientos.length,
                   itemBuilder: (context, index) {
                     final m = mantenimientos[index];
-                    return ListTile(
-                      title: Text(
-                        m.numero_mantenimiento.toString(),
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    return Container(
+                      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      subtitle: Text(
-                        'Estado: ${m.estado}',
-                        style: const TextStyle(color: Colors.grey, fontSize: 14),
+                      child: ListTile(
+                        title: Text(
+                          m.numero_mantenimiento.toString(),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        subtitle: Text(
+                          'Estado: ${m.estado}',
+                          style: const TextStyle(color: Colors.grey, fontSize: 14),
+                        ),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => MantenimientoOperationsScreen(mantenimiento: m),
+                            ),
+                          );
+                        },
                       ),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => MantenimientoOperationsScreen(mantenimiento: m),
-                          ),
-                        );
-                      },
                     );
                   },
                 ),
@@ -82,7 +90,7 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
                       ),
                     ),
                     onPressed: () {
-                      // Exportar a xlsx
+                      
                     },
                     child: const Text(
                       'Exportar a xlsx',
@@ -98,7 +106,10 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF2196F3),
         onPressed: () {
-          // Acción para agregar nuevo mantenimiento
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const MantenimientoAddScreen()),
+          );
         },
         child: const Icon(Icons.add, size: 32),
       ),

@@ -3,6 +3,7 @@ import 'package:inventario_proyecto/widgets/main_drawer.dart';
 import 'package:inventario_proyecto/services/transformadores_service.dart';
 import 'package:inventario_proyecto/models/tranformadoresactuales.dart';
 import 'package:inventario_proyecto/screens/transformadoresactuales_operations_screen.dart';
+import 'package:inventario_proyecto/screens/transformadoresactuales_add_screen.dart';
 
 class Transformadores2025Screen extends StatefulWidget {
   const Transformadores2025Screen({super.key});
@@ -27,59 +28,97 @@ class _Transformadores2025ScreenState extends State<Transformadores2025Screen> {
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
       ),
-      body: StreamBuilder<List<Map<String, dynamic>>>(
-        stream: _service.getTransformadoresStream(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-          final transformadores = snapshot.data ?? [];
-          if (transformadores.isEmpty) {
-            return const Center(child: Text('No hay transformadores registrados.'));
-          }
-          return ListView.builder(
-            itemCount: transformadores.length,
-            itemBuilder: (context, index) {
-              final t = Tranformadoresactuales.fromMap(transformadores[index]);
-              return InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => TransformadoresActualesOperationsScreen(transformador: t),
+      body: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 100),
+            child: StreamBuilder<List<Map<String, dynamic>>>(
+
+              stream: _service.getTransformadoresStream(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+                final transformadores = snapshot.data ?? [];
+                if (transformadores.isEmpty) {
+                  return const Center(child: Text('No hay transformadores registrados.'));
+                }
+                return ListView.builder(
+                  itemCount: transformadores.length,
+                  itemBuilder: (context, index) {
+                    final t = Tranformadoresactuales.fromMap(transformadores[index]);
+                    return InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => TransformadoresActualesOperationsScreen(transformador: t),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                        padding: const EdgeInsets.all(8),
+                        color: Colors.grey[300],
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'TRANSFORMADOR ${t.consecutivo}',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            Text(
+                              'Estado: ${t.estado}',
+                              style: const TextStyle(color: Colors.black54, fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 32.0),
+              child: SizedBox(
+                width: 180,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                  );
-                },
-                child: Container(
-                  margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                  padding: const EdgeInsets.all(8),
-                  color: Colors.grey[300],
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'TRANSFORMADOR ${t.consecutivo}',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                      Text(
-                        'Estado: ${t.estado}',
-                        style: const TextStyle(color: Colors.black54, fontSize: 14),
-                      ),
-                    ],
+                  ),
+                  onPressed: () {
+                    // Aquí va la lógica para exportar a xlsx
+                  },
+                  child: const Text(
+                    'Exportar a xlsx',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ),
-              );
-            },
-          );
-        },
+              ),
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF2196F3),
         onPressed: () {
-       
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const TransformadoresActualesAddScreen(),
+            ),
+          );
         },
         child: const Icon(Icons.add, size: 32),
       ),

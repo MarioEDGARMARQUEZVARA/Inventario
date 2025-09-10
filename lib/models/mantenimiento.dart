@@ -46,6 +46,7 @@ class Mantenimiento {
   double? rt_fase_b;
   double? rt_fase_c;
   String serie;
+  String? motivo;
 
   Mantenimiento({
     this.id = '',
@@ -69,6 +70,7 @@ class Mantenimiento {
     this.rt_fase_b,
     this.rt_fase_c,
     required this.serie,
+    this.motivo,
   });
 
   factory Mantenimiento.fromMap(Map<String, dynamic> map) {
@@ -93,6 +95,7 @@ class Mantenimiento {
   rt_fase_b: (map['Rt_fase_b'] is num) ? map['Rt_fase_b'].toDouble() : double.tryParse(map['Rt_fase_b']?.toString() ?? ''),
   rt_fase_c: (map['Rt_fase_c'] is num) ? map['Rt_fase_c'].toDouble() : double.tryParse(map['Rt_fase_c']?.toString() ?? ''),
       serie: map['Serie'] ?? '',
+      motivo: map['Motivo'] ?? '',
     );
   }
 }
