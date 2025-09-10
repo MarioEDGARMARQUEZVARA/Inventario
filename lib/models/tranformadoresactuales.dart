@@ -37,6 +37,7 @@ class Tranformadoresactuales {
   String baja;
   int cargas;
   String area_fecha_de_entrega_transformador_reparado;
+  String? motivo; // Nuevo campo opcional
 
   Tranformadoresactuales({
     this.id,
@@ -67,6 +68,7 @@ class Tranformadoresactuales {
     required this.baja,
     required this.cargas,
     required this.area_fecha_de_entrega_transformador_reparado,
+    this.motivo,
   });
 
   factory Tranformadoresactuales.fromMap(Map<String, dynamic> map) {
@@ -108,6 +110,7 @@ class Tranformadoresactuales {
           ? map['Cargas']
           : int.tryParse(map['Cargas']?.toString() ?? '0') ?? 0,
       area_fecha_de_entrega_transformador_reparado: map['Aerea_fecha_de_entrega_transformador_reparado']?.toString() ?? '',
+      motivo: map['Motivo'] as String?,
     );
   }
 }
