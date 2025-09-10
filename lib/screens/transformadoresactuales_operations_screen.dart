@@ -1,6 +1,7 @@
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:inventario_proyecto/models/tranformadoresactuales.dart';
+import 'package:inventario_proyecto/widgets/motivo_dialog.dart';
 
 class TransformadoresActualesOperationsScreen extends StatelessWidget {
   final Tranformadoresactuales transformador;
@@ -82,6 +83,34 @@ class TransformadoresActualesOperationsScreen extends StatelessWidget {
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
                 onPressed: () {},
                 child: const Text('Exportar a xlsx', style: TextStyle(color: Colors.white)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.cyan),
+                onPressed: () async {
+                  final motivo = await mostrarMotivoDialog(context);
+                  if (motivo != null && motivo.isNotEmpty) {
+                 
+                    await (transformador.id!, motivo);
+                  
+                    await FirebaseFirestore.instance
+                      .collection('transformadores2025')
+                      .doc(transformador.id)
+                      .update({
+                        'estado': 'Reparado',
+                        'salida_mantenimiento': 'Sí',
+                        'fecha_salida_mantenimiento': DateTime.now().toString(),
+                      });
+                  
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Enviado a mantenimiento')),
+                    );
+                  }
+                },
+                child: const Text('Enviar a mantenimiento', style: TextStyle(color: Colors.white)),
               ),
             ),
           ],

@@ -75,7 +75,7 @@ class TrasnformadoresxzonaOperationsScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.cyan),
                 onPressed: () async {
                   if (transformador.id == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -85,8 +85,6 @@ class TrasnformadoresxzonaOperationsScreen extends StatelessWidget {
                   }
                   final motivo = await mostrarMotivoDialog(context);
                   if (motivo != null && motivo.isNotEmpty) {
-                    // Actualiza campo reparado y guarda motivo
-                    // await (transformador.id!, motivo); // <-- Elimina o implementa correctamente esta línea
                     await FirebaseFirestore.instance
                       .collection('Transformadoresxzona')
                       .doc(transformador.id)
@@ -118,8 +116,6 @@ class TrasnformadoresxzonaOperationsScreen extends StatelessWidget {
       ),
     );
   }
-
-  // Ejemplo para mostrar el motivo en la pantalla de mantenimiento
   Future<String?> obtenerMotivo(String id) async {
     final snapshot = await FirebaseFirestore.instance
         .collection('Mantenimiento')
