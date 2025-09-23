@@ -13,7 +13,15 @@ class Transformadores2025Screen extends StatefulWidget {
 }
 
 class _Transformadores2025ScreenState extends State<Transformadores2025Screen> {
-  final TransformadoresService _service = TransformadoresService();
+  Future<void> _navigateToOperations(Tranformadoresactuales t) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TransformadoresActualesOperationsScreen(transformador: t),
+      ),
+    );
+    setState(() {}); // Refresca la lista al volver
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,9 +40,8 @@ class _Transformadores2025ScreenState extends State<Transformadores2025Screen> {
         children: [
           Padding(
             padding: const EdgeInsets.only(bottom: 100),
-            child: StreamBuilder<List<Map<String, dynamic>>>(
-
-              stream: _service.getTransformadoresStream(),
+            child: FutureBuilder<List<Tranformadoresactuales>>(
+              future: getTranformadoresActuales(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -49,16 +56,9 @@ class _Transformadores2025ScreenState extends State<Transformadores2025Screen> {
                 return ListView.builder(
                   itemCount: transformadores.length,
                   itemBuilder: (context, index) {
-                    final t = Tranformadoresactuales.fromMap(transformadores[index]);
+                    final t = transformadores[index];
                     return InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => TransformadoresActualesOperationsScreen(transformador: t),
-                          ),
-                        );
-                      },
+                      onTap: () => _navigateToOperations(t),
                       child: Container(
                         margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                         padding: const EdgeInsets.all(8),
@@ -112,13 +112,14 @@ class _Transformadores2025ScreenState extends State<Transformadores2025Screen> {
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF2196F3),
-        onPressed: () {
-          Navigator.push(
+        onPressed: () async {
+          await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (_) => const TransformadoresActualesAddScreen(),
             ),
           );
+          setState(() {}); // Refresca la lista al volver de agregar
         },
         child: const Icon(Icons.add, size: 32),
       ),

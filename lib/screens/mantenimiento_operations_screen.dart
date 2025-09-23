@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:inventario_proyecto/models/mantenimiento.dart';
+import 'package:inventario_proyecto/screens/mantenimiento_update.dart';
+import 'package:inventario_proyecto/services/mantenimiento_service.dart';
 
 class MantenimientoOperationsScreen extends StatelessWidget {
   final Mantenimiento mantenimiento;
@@ -13,6 +15,7 @@ class MantenimientoOperationsScreen extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
+          
         ),
         title: const Text('Mantenimiento', style: TextStyle(color: Colors.white)),
         centerTitle: true,
@@ -66,7 +69,14 @@ class MantenimientoOperationsScreen extends StatelessWidget {
                         backgroundColor: Colors.red,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                       ),
-                      onPressed: () {},
+                      onPressed: () async {
+                        await deleteMantenimiento(mantenimiento.id ?? '');
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Mantenimiento eliminado correctamente')),
+
+                        );
+                        Navigator.of(context).pop();
+                      },
                       child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
                     ),
                   ),
@@ -78,7 +88,14 @@ class MantenimientoOperationsScreen extends StatelessWidget {
                         backgroundColor: Color(0xFF2A1AFF),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                       ),
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => MantenimientoUpdateScreen(mantenimiento: mantenimiento),
+                          ),
+                        );
+                      },
                       child: const Text('Actualizar', style: TextStyle(color: Colors.white)),
                     ),
                   ),

@@ -1,7 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:inventario_proyecto/models/tranformadoresactuales.dart';
+import 'package:inventario_proyecto/screens/transformadoresactuales_update.dart';
+import 'package:inventario_proyecto/services/transformadores_service.dart';
 import 'package:inventario_proyecto/widgets/motivo_dialog.dart';
+
 
 class TransformadoresActualesOperationsScreen extends StatelessWidget {
   final Tranformadoresactuales transformador;
@@ -54,8 +57,8 @@ class TransformadoresActualesOperationsScreen extends StatelessWidget {
             Text('Fecha de entrada: ${_formatDate(transformador.fecha_de_entrada_al_taller)}'),
             Text('Fecha de salida: ${_formatDate(transformador.fecha_de_salida_del_taller)}'),
             Text('Fecha de entrega: ${_formatDate(transformador.fecha_entrega_almacen)}'),
-            Text('Salida a mantenimiento mayor: ${transformador.salida_mantenimiento}'),
-            Text('Fecha de salida a mantenimiento mayor: ${_formatDate(transformador.fecha_salida_mantenimiento)}'),
+            Text('Salida a mantenimiento mayor: ${transformador.salida_mantenimiento ? "Sí" : "No"}'),
+            Text('Fecha de salida a mantenimiento mayor: ${transformador.fecha_salida_mantenimiento != null ? _formatDate(transformador.fecha_salida_mantenimiento!) : "N/A"}'),
             Text('Baja: ${transformador.baja}'),
             Text('Cargas: ${transformador.cargas}'),
             const SizedBox(height: 24),
@@ -63,7 +66,25 @@ class TransformadoresActualesOperationsScreen extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                onPressed: () {},
+                onPressed: () async {
+                  if (transformador.id == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Error: El ID del transformador es nulo')),
+                    );
+                    return;
+                  }
+                  int code = await deleteTransformadorActual(transformador.id!);
+                  if (code == 200) {
+                    Navigator.pop(context); // Regresa y refresca la lista
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Transformador eliminado')),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Error al eliminar')),
+                    );
+                  }
+                },
                 child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
               ),
             ),
@@ -72,7 +93,14 @@ class TransformadoresActualesOperationsScreen extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF2A1AFF)),
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TransformadoresActualesUpdateScreen(transformador: transformador),
+                    ),
+                  );
+                },
                 child: const Text('Actualizar', style: TextStyle(color: Colors.white)),
               ),
             ),
@@ -93,18 +121,11 @@ class TransformadoresActualesOperationsScreen extends StatelessWidget {
                 onPressed: () async {
                   final motivo = await mostrarMotivoDialog(context);
                   if (motivo != null && motivo.isNotEmpty) {
-                 
-                    await (transformador.id!, motivo);
-                  
-                    await FirebaseFirestore.instance
-                      .collection('transformadores2025')
-                      .doc(transformador.id)
-                      .update({
-                        'estado': 'Reparado',
-                        'salida_mantenimiento': 'Sí',
-                        'fecha_salida_mantenimiento': DateTime.now().toString(),
-                      });
-                  
+                    transformador.estado = 'Reparado';
+                    transformador.salida_mantenimiento = true;
+                    transformador.fecha_salida_mantenimiento = DateTime.now();
+                    transformador.motivo = motivo;
+                    await updateTransformador(transformador);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Enviado a mantenimiento')),
                     );
