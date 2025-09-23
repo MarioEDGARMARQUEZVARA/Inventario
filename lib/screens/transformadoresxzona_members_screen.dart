@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:inventario_proyecto/models/transformadoresxzona.dart';
 import 'package:inventario_proyecto/screens/transformadoresxzona_operations_screen.dart';
 import 'package:inventario_proyecto/screens/transformadoresxzona_add_screen.dart';
+import 'package:inventario_proyecto/services/transformadoresxzona_service.dart';
 
 class TransformadoresxzonaMembersScreen extends StatelessWidget {
   final String zona;
-  final List<TransformadoresXZona> transformadores;
 
   const TransformadoresxzonaMembersScreen({
     super.key,
     required this.zona,
-    required this.transformadores,
   });
 
   @override
@@ -29,37 +28,55 @@ class TransformadoresxzonaMembersScreen extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.only(bottom: 100),
-            child: ListView.builder(
-              itemCount: transformadores.length,
-              itemBuilder: (context, index) {
-                final t = transformadores[index];
-                return InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => TrasnformadoresxzonaOperationsScreen(transformador: t),
+            child: StreamBuilder<List<TransformadoresXZona>>(
+              stream: transformadoresxzonaStream(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+                // Filtra por zona aquí
+                final transformadores = (snapshot.data ?? [])
+                    .where((t) => t.zona == zona)
+                    .toList();
+                if (transformadores.isEmpty) {
+                  return const Center(child: Text('No hay transformadores registrados en esta zona.'));
+                }
+                return ListView.builder(
+                  itemCount: transformadores.length,
+                  itemBuilder: (context, index) {
+                    final t = transformadores[index];
+                    return InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => TrasnformadoresxzonaOperationsScreen(transformador: t),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                        padding: const EdgeInsets.all(8),
+                        color: Colors.grey[300],
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              t.numeroDeSerie,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            Text(
+                              'Reparado: ${t.reparado ? "Sí" : "No"}',
+                              style: const TextStyle(color: Colors.black54, fontSize: 14),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                    padding: const EdgeInsets.all(8),
-                    color: Colors.grey[300],
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          t.numeroDeSerie,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                        ),
-                        Text(
-                          'Reparado: ${t.reparado ? "Sí" : "No"}',
-                          style: const TextStyle(color: Colors.black54, fontSize: 14),
-                        ),
-                      ],
-                    ),
-                  ),
                 );
               },
             ),

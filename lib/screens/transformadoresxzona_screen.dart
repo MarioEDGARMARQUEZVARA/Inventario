@@ -13,8 +13,6 @@ class TransformadoresxzonaScreen extends StatefulWidget {
 }
 
 class _TransformadoresxzonaScreenState extends State<TransformadoresxzonaScreen> {
-  final TransformadoresxzonaService _service = TransformadoresxzonaService();
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,11 +28,10 @@ class _TransformadoresxzonaScreenState extends State<TransformadoresxzonaScreen>
       ),
       body: Stack(
         children: [
-          // Tu lista y contenido principal
           Padding(
-            padding: const EdgeInsets.only(bottom: 100), // deja espacio para el botón
-            child: StreamBuilder<List<Map<String, dynamic>>>(
-              stream: _service.getTransformadoresxzonaStream(),
+            padding: const EdgeInsets.only(bottom: 100),
+            child: StreamBuilder<List<TransformadoresXZona>>(
+              stream: transformadoresxzonaStream(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -47,13 +44,10 @@ class _TransformadoresxzonaScreenState extends State<TransformadoresxzonaScreen>
                   return const Center(child: Text('No hay transformadores registrados.'));
                 }
 
-                // Agrupar por zona
                 final Map<String, List<TransformadoresXZona>> zonas = {};
-                for (var item in data) {
-                  final t = TransformadoresXZona.fromMap(item);
+                for (var t in data) {
                   zonas.putIfAbsent(t.zona, () => []).add(t);
                 }
-
                 final zonaKeys = zonas.keys.toList();
 
                 return ListView.builder(
@@ -68,7 +62,6 @@ class _TransformadoresxzonaScreenState extends State<TransformadoresxzonaScreen>
                           MaterialPageRoute(
                             builder: (_) => TransformadoresxzonaMembersScreen(
                               zona: zona,
-                              transformadores: zonas[zona]!,
                             ),
                           ),
                         );
