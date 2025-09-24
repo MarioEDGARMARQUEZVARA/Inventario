@@ -2,30 +2,46 @@ import 'package:flutter/material.dart';
 import 'package:inventario_proyecto/models/transformadoresxzona.dart';
 import 'package:inventario_proyecto/services/transformadoresxzona_service.dart';
 
-class TransformadoresxzonaAddScreen extends StatefulWidget {
-  final String? zona;
-  const TransformadoresxzonaAddScreen({super.key, this.zona});
+class TransformadoresxzonaUpdateScreen extends StatefulWidget {
+  final TransformadoresXZona transformador;
+  const TransformadoresxzonaUpdateScreen({super.key, required this.transformador});
 
   @override
-  State<TransformadoresxzonaAddScreen> createState() => _TransformadoresxzonaAddScreenState();
+  State<TransformadoresxzonaUpdateScreen> createState() => _TransformadoresxzonaUpdateScreenState();
 }
 
-class _TransformadoresxzonaAddScreenState extends State<TransformadoresxzonaAddScreen> {
+class _TransformadoresxzonaUpdateScreenState extends State<TransformadoresxzonaUpdateScreen> {
   final _formKey = GlobalKey<FormState>();
 
+  late TextEditingController zonaController;
+  late TextEditingController numEconomicoController;
+  late TextEditingController marcaController;
+  late TextEditingController capacidadController;
+  late TextEditingController faseController;
+  late TextEditingController numeroDeSerieController;
+  late TextEditingController litrosController;
+  late TextEditingController pesoKgController;
+  late TextEditingController relacionController;
+  late TextEditingController statusController;
 
-  final numEconomicoController = TextEditingController();
-  final marcaController = TextEditingController();
-  final capacidadController = TextEditingController();
-  final faseController = TextEditingController();
-  final numeroDeSerieController = TextEditingController();
-  final litrosController = TextEditingController();
-  final pesoKgController = TextEditingController();
-  final relacionController = TextEditingController();
-  final statusController = TextEditingController();
-  final zonaController = TextEditingController();
+  late DateTime fechaMovimiento;
 
-  DateTime fechaMovimiento = DateTime.now();
+  @override
+  void initState() {
+    super.initState();
+    final t = widget.transformador;
+    zonaController = TextEditingController(text: t.zona);
+    numEconomicoController = TextEditingController(text: t.numEconomico.toString());
+    marcaController = TextEditingController(text: t.marca);
+    capacidadController = TextEditingController(text: t.capacidad.toString());
+    faseController = TextEditingController(text: t.fase.toString());
+    numeroDeSerieController = TextEditingController(text: t.numeroDeSerie);
+    litrosController = TextEditingController(text: t.litros.replaceAll(' LTS', ''));
+    pesoKgController = TextEditingController(text: t.pesoKg.replaceAll(' KGS', ''));
+    relacionController = TextEditingController(text: t.relacion.toString());
+    statusController = TextEditingController(text: t.status);
+    fechaMovimiento = t.fechaMovimiento;
+  }
 
   @override
   void dispose() {
@@ -45,10 +61,10 @@ class _TransformadoresxzonaAddScreenState extends State<TransformadoresxzonaAddS
   Future<void> _guardar() async {
     final litros = '${litrosController.text.trim()} LTS';
     final pesoKg = '${pesoKgController.text.trim()} KGS';
-    final zonaFinal = widget.zona ?? zonaController.text.trim();
 
     final transformador = TransformadoresXZona(
-      zona: zonaFinal,
+      id: widget.transformador.id,
+      zona: zonaController.text,
       numEconomico: int.tryParse(numEconomicoController.text) ?? 0,
       marca: marcaController.text,
       capacidad: double.tryParse(capacidadController.text) ?? 0,
@@ -59,11 +75,12 @@ class _TransformadoresxzonaAddScreenState extends State<TransformadoresxzonaAddS
       relacion: int.tryParse(relacionController.text) ?? 0,
       status: statusController.text,
       fechaMovimiento: fechaMovimiento,
-      reparado: false,
+      reparado: widget.transformador.reparado,
+      motivo: widget.transformador.motivo,
     );
-    await addTransformador(transformador);
+    await updateTransformador(transformador);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Transformador agregado correctamente')),
+      const SnackBar(content: Text('Transformador actualizado correctamente')),
     );
     Navigator.pop(context);
   }
@@ -71,19 +88,18 @@ class _TransformadoresxzonaAddScreenState extends State<TransformadoresxzonaAddS
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Agregar Transformador')),
+      appBar: AppBar(title: const Text('Actualizar Transformador')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: ListView(
             children: [
-              if (widget.zona == null)
-                TextFormField(
-                  controller: zonaController,
-                  decoration: const InputDecoration(labelText: 'Zona'),
-                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-                ),
+              TextFormField(
+                controller: zonaController,
+                decoration: const InputDecoration(labelText: 'Zona'),
+                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+              ),
               TextFormField(
                 controller: numEconomicoController,
                 decoration: const InputDecoration(labelText: 'Número económico'),
@@ -160,7 +176,7 @@ class _TransformadoresxzonaAddScreenState extends State<TransformadoresxzonaAddS
                     await _guardar();
                   }
                 },
-                child: const Text('Guardar'),
+                child: const Text('Actualizar'),
               ),
             ],
           ),
@@ -169,4 +185,3 @@ class _TransformadoresxzonaAddScreenState extends State<TransformadoresxzonaAddS
     );
   }
 }
-

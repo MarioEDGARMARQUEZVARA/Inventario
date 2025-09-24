@@ -1,8 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:inventario_proyecto/models/transformadoresxzona.dart';
+import 'package:inventario_proyecto/services/transformadoresxzona_service.dart';
+import 'package:inventario_proyecto/screens/transformadoresxzona_update.dart';
 import 'package:inventario_proyecto/widgets/motivo_dialog.dart';
-
 
 class TrasnformadoresxzonaOperationsScreen extends StatelessWidget {
   final TransformadoresXZona transformador;
@@ -49,7 +50,15 @@ class TrasnformadoresxzonaOperationsScreen extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                onPressed: () {},
+                onPressed: () async {
+                  if (transformador.id != null) {
+                    await deleteTransformadorActual(transformador.id!);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Transformador eliminado correctamente')),
+                    );
+                    Navigator.pop(context);
+                  }
+                },
                 child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
               ),
             ),
@@ -58,7 +67,14 @@ class TrasnformadoresxzonaOperationsScreen extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF2A1AFF)),
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TransformadoresxzonaUpdateScreen(transformador: transformador),
+                    ),
+                  );
+                },
                 child: const Text('Actualizar', style: TextStyle(color: Colors.white)),
               ),
             ),

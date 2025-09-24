@@ -13,8 +13,6 @@ class MantenimientoScreen extends StatefulWidget {
 }
 
 class _MantenimientoScreenState extends State<MantenimientoScreen> {
-  final MantenimientoService _service = MantenimientoService();
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -28,20 +26,19 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
       ),
-      body: StreamBuilder<List<Map<String, dynamic>>>(
-        stream: _service.getMantenimientoStream(),
+      body: StreamBuilder<List<Mantenimiento>>(
+        stream: mantenimientosStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Error: [${snapshot.error}'));
+            return Center(child: Text('Error: ${snapshot.error}'));
           }
-          final data = snapshot.data ?? [];
-          if (data.isEmpty) {
+          final mantenimientos = snapshot.data ?? [];
+          if (mantenimientos.isEmpty) {
             return const Center(child: Text('No hay reportes de mantenimiento registrados.'));
           }
-          final mantenimientos = data.map((e) => Mantenimiento.fromMap(e)).toList();
           return Column(
             children: [
               Expanded(
@@ -90,7 +87,7 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
                       ),
                     ),
                     onPressed: () {
-                      
+                      // Implementa exportar aquí si lo necesitas
                     },
                     child: const Text(
                       'Exportar a xlsx',
