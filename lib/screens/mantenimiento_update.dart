@@ -56,12 +56,12 @@ class _MantenimientoUpdateScreenState extends State<MantenimientoUpdateScreen> {
     rtFaseCController = TextEditingController(text: m.rt_fase_c?.toString() ?? '');
     serieController = TextEditingController(text: m.serie);
 
-    fechaAlta = m.fecha_de_alta;
-    fechaSalida = m.fecha_de_salida;
-    fechaFabricacion = m.fecha_fabricacion;
-    fechaLlegada = m.fecha_llegada;
-    fechaPruebaInicio = m.fecha_prueba.inicio;
-    fechaPruebaFin = m.fecha_prueba.fin;
+    fechaAlta = m.fecha_de_alta!;
+    fechaSalida = m.fecha_de_salida!;
+    fechaFabricacion = m.fecha_fabricacion!;
+    fechaLlegada = m.fecha_llegada!;
+    fechaPruebaInicio = m.fecha_prueba.inicio!;
+    fechaPruebaFin = m.fecha_prueba.fin!;
   }
 
   Future<void> _selectDate(BuildContext context, DateTime initialDate, Function(DateTime) onSelected) async {
@@ -254,4 +254,3 @@ class _MantenimientoUpdateScreenState extends State<MantenimientoUpdateScreen> {
     );
   }
 }
-

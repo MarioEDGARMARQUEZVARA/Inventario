@@ -1,10 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:inventario_proyecto/models/tranformadoresactuales.dart';
 import 'package:inventario_proyecto/screens/transformadoresactuales_update.dart';
 import 'package:inventario_proyecto/services/transformadores_service.dart';
 import 'package:inventario_proyecto/widgets/motivo_dialog.dart';
-
 
 class TransformadoresActualesOperationsScreen extends StatelessWidget {
   final Tranformadoresactuales transformador;
@@ -36,11 +34,13 @@ class TransformadoresActualesOperationsScreen extends StatelessWidget {
           children: [
             Text('Consecutivo: ${transformador.consecutivo}', style: const TextStyle(fontWeight: FontWeight.bold)),
             Text('Fecha de llegada: ${_formatDate(transformador.fecha_de_llegada)}'),
+            Text('Área: ${transformador.area}'),
+            Text('Marca: ${transformador.marca}'),
+            Text('Capacidad KVA: ${transformador.capacidadKVA}'),
+            Text('Fecha de llegada: ${_formatDate(transformador.fecha_de_llegada)}'),
             Text('Mes: ${transformador.mes}'),
             Text('Área y fecha de entrega de transformador reparado: ${transformador.area_fecha_de_entrega_transformador_reparado}'),
-            Text('Área: ${transformador.area}'),
             Text('Económico: ${transformador.economico}'),
-            Text('Marca: ${transformador.marca}'),
             Text('Capacidad KVA: ${transformador.capacidadKVA}'),
             Text('Fases: ${transformador.fases}'),
             Text('Serie: ${transformador.serie}'),
@@ -62,6 +62,8 @@ class TransformadoresActualesOperationsScreen extends StatelessWidget {
             Text('Baja: ${transformador.baja}'),
             Text('Cargas: ${transformador.cargas}'),
             const SizedBox(height: 24),
+
+            // Eliminar
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -75,7 +77,7 @@ class TransformadoresActualesOperationsScreen extends StatelessWidget {
                   }
                   int code = await deleteTransformadorActual(transformador.id!);
                   if (code == 200) {
-                    Navigator.pop(context); // Regresa y refresca la lista
+                    Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Transformador eliminado')),
                     );
@@ -89,6 +91,8 @@ class TransformadoresActualesOperationsScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
+
+            // Actualizar
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -105,6 +109,8 @@ class TransformadoresActualesOperationsScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
+
+            // Exportar
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -114,21 +120,28 @@ class TransformadoresActualesOperationsScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
+
+            // Enviar a mantenimiento
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.cyan),
                 onPressed: () async {
+                  if (transformador.id == null) return;
+
                   final motivo = await mostrarMotivoDialog(context);
                   if (motivo != null && motivo.isNotEmpty) {
-                    transformador.estado = 'Reparado';
-                    transformador.salida_mantenimiento = true;
-                    transformador.fecha_salida_mantenimiento = DateTime.now();
-                    transformador.motivo = motivo;
-                    await updateTransformador(transformador);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Enviado a mantenimiento')),
-                    );
+                    int code = await enviarAMantenimiento(transformador.id!, motivo);
+                    if (code == 200) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Enviado a mantenimiento')),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Error al enviar a mantenimiento')),
+                      );
+                    }
                   }
                 },
                 child: const Text('Enviar a mantenimiento', style: TextStyle(color: Colors.white)),
@@ -140,4 +153,3 @@ class TransformadoresActualesOperationsScreen extends StatelessWidget {
     );
   }
 }
-

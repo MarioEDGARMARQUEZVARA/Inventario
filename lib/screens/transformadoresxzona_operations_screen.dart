@@ -43,18 +43,20 @@ class TrasnformadoresxzonaOperationsScreen extends StatelessWidget {
             Text('Peso en kg: ${transformador.pesoKg}'),
             Text('Relación: ${transformador.relacion}'),
             Text('Status: ${transformador.status}'),
-            Text('Fecha de movimiento: ${_formatDate(transformador.fechaMovimiento)}'),
+            Text('Fecha de movimiento: ${transformador.fechaMovimiento != null ? _formatDate(transformador.fechaMovimiento!) : "N/A"}'),
             Text('Reparado: ${transformador.reparado ? "Sí" : "No"}'),
             const SizedBox(height: 24),
+
+            // Eliminar
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                 onPressed: () async {
                   if (transformador.id != null) {
-                    await deleteTransformadorActual(transformador.id!);
+                    await deleteTransformadorZona(transformador.id!);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Transformador eliminado correctamente')),
+                      const SnackBar(content: Text('Transformador eliminado')),
                     );
                     Navigator.pop(context);
                   }
@@ -63,6 +65,8 @@ class TrasnformadoresxzonaOperationsScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
+
+            // Actualizar
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -79,6 +83,8 @@ class TrasnformadoresxzonaOperationsScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
+
+            // Exportar
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -88,29 +94,24 @@ class TrasnformadoresxzonaOperationsScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
+
+            // Enviar a mantenimiento
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.cyan),
                 onPressed: () async {
-                  if (transformador.id == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Error: El ID del transformador es nulo')),
-                    );
-                    return;
-                  }
+                  if (transformador.id == null) return;
                   final motivo = await mostrarMotivoDialog(context);
                   if (motivo != null && motivo.isNotEmpty) {
-                    await FirebaseFirestore.instance
-                      .collection('Transformadoresxzona')
-                      .doc(transformador.id)
-                      .update({'reparado': true});
+                    await enviarAMantenimientoZona(transformador.id!, motivo);
+                    Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Marcado como reparado')),
+                      const SnackBar(content: Text('Enviado a mantenimiento')),
                     );
-                  }
+                    }
                 },
-                child: const Text('Reparado', style: TextStyle(color: Colors.white)),
+                child: const Text('Enviar a mantenimiento', style: TextStyle(color: Colors.white)),
               ),
             ),
             const SizedBox(height: 12),
@@ -132,9 +133,11 @@ class TrasnformadoresxzonaOperationsScreen extends StatelessWidget {
       ),
     );
   }
+
   Future<String?> obtenerMotivo(String id) async {
-    final snapshot = await FirebaseFirestore.instance
-        .collection('Mantenimiento')
+    // La colección de mantenimiento utilizada en los servicios es 'mantenimiento2025'
+    final col = FirebaseFirestore.instance.collection('mantenimiento2025');
+    final snapshot = await col
         .doc(id)
         .collection('motivos')
         .orderBy('fecha', descending: true)
