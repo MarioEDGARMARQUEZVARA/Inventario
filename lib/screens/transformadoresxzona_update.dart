@@ -40,7 +40,7 @@ class _TransformadoresxzonaUpdateScreenState extends State<TransformadoresxzonaU
     pesoKgController = TextEditingController(text: t.pesoKg.replaceAll(' KGS', ''));
     relacionController = TextEditingController(text: t.relacion.toString());
     statusController = TextEditingController(text: t.status);
-    fechaMovimiento = t.fechaMovimiento;
+    fechaMovimiento = t.fechaMovimiento!;
   }
 
   @override

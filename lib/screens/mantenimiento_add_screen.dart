@@ -219,9 +219,6 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                       serie: serieController.text,
                     );
                     await addMantenimiento(mantenimiento);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Mantenimiento agregado correctamente')),
-                    );
                     Navigator.pop(context);
                   }
                 },

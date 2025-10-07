@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'motivo.dart';
 class RangoFecha {
   final DateTime inicio;
   final DateTime fin;
@@ -49,9 +50,10 @@ class TransformadoresXZona {
   String pesoKg;
   int relacion;
   String status;
-  DateTime fechaMovimiento;
+  DateTime? fechaMovimiento;
   bool reparado;
-  String? motivo; // Nuevo campo opcional
+  String? motivo;
+  List<Motivo>? motivos; // Nuevo campo opcional
 
   TransformadoresXZona({
     this.id,
@@ -68,42 +70,72 @@ class TransformadoresXZona {
     required this.fechaMovimiento,
     required this.reparado,
     this.motivo,
+    this.motivos,
   });
   factory TransformadoresXZona.fromMap(Map<String, dynamic> map) {
-    DateTime parseDate(dynamic value) {
+    DateTime? parseDate(dynamic value) {
+      if (value == null) return null;
       if (value is DateTime) return value;
       if (value is Timestamp) return value.toDate();
-      if (value is String) return RangoFecha._parseFechaDMY(value);
-      throw FormatException('Tipo de fecha no soportado: $value');
+      if (value is String) {
+        try {
+          return RangoFecha._parseFechaDMY(value);
+        } catch (_) {
+          return DateTime.tryParse(value);
+        }
+      }
+      return null;
+    }
+    // Helper to try multiple possible keys that may exist in Firestore docs
+    dynamic get(Map<String, dynamic> m, List<String> keys) {
+      for (var k in keys) {
+        if (m.containsKey(k) && m[k] != null) return m[k];
+      }
+      return null;
     }
     return TransformadoresXZona(
-      zona: map['Zona']?.toString() ?? '',
-      numEconomico: map['Numero_economico'] is int
-          ? map['Numero_economico']
-          : int.tryParse(map['Numero_economico']?.toString() ?? '0') ?? 0,
-      marca: map['Marca']?.toString() ?? '',
-      capacidad: map['Capacidad'] is double
-          ? map['Capacidad']
-          : double.tryParse(map['Capacidad']?.toString() ?? '0') ?? 0,
-      fase: map['Fase'] is int
-          ? map['Fase']
-          : int.tryParse(map['Fase']?.toString() ?? '0') ?? 0,
-      numeroDeSerie: map['Numero_de_serie']?.toString() ?? '',
-      litros: map['Litros']?.toString() ?? '',
-      pesoKg: map['Peso_kg']?.toString() ?? '',
-      relacion: map['Relacion'] is int
-          ? map['Relacion']
-          : int.tryParse(map['Relacion']?.toString() ?? '0') ?? 0,
-      status: map['Status']?.toString() ?? '',
-      fechaMovimiento: parseDate(map['Fecha_mov']),
-      reparado: map['Reparado'] is bool
-          ? map['Reparado']
-          : map['Reparado']?.toString().toLowerCase() == 'true',
-      motivo: map['Motivo'] as String?,
+      zona: get(map, ['Zona', 'zona', 'ZONA'])?.toString() ?? '',
+      numEconomico: (() {
+        final v = get(map, ['Numero_economico', 'NumeroEconomico', 'numero_economico', 'economico']);
+        if (v is int) return v;
+        return int.tryParse(v?.toString() ?? '0') ?? 0;
+      })(),
+      marca: get(map, ['Marca', 'marca'])?.toString() ?? '',
+      capacidad: (() {
+        final v = get(map, ['Capacidad', 'CapacidadKVA', 'capacidad']);
+        if (v is double) return v;
+        if (v is num) return v.toDouble();
+        return double.tryParse(v?.toString() ?? '0') ?? 0;
+      })(),
+      fase: (() {
+        final v = get(map, ['Fase', 'fase']);
+        if (v is int) return v;
+        return int.tryParse(v?.toString() ?? '0') ?? 0;
+      })(),
+      numeroDeSerie: get(map, ['Numero_de_serie', 'NumeroDeSerie', 'serie'])?.toString() ?? '',
+      litros: get(map, ['Litros', 'litros'])?.toString() ?? '',
+      pesoKg: get(map, ['Peso_kg', 'PesoKg', 'peso_kg'])?.toString() ?? '',
+      relacion: (() {
+        final v = get(map, ['Relacion', 'relacion']);
+        if (v is int) return v;
+        return int.tryParse(v?.toString() ?? '0') ?? 0;
+      })(),
+      status: get(map, ['Status', 'status'])?.toString() ?? '',
+      fechaMovimiento: parseDate(get(map, ['Fecha_mov', 'FechaMovimiento', 'fechaMovimiento'])),
+      reparado: (() {
+        final v = get(map, ['Reparado', 'reparado']);
+        if (v is bool) return v;
+        return v?.toString().toLowerCase() == 'true';
+      })(),
+      motivo: get(map, ['Motivo', 'motivo']) as String?,
+      motivos: (get(map, ['Motivos', 'motivos']) as List?)
+          ?.map((m) => Motivo.fromMap(m as Map<String, dynamic>))
+          .toList(),
+
     );
   }
   Map<String, dynamic> toJson() {
-    return {
+    final json = {
       'Zona': zona,
       'Numero_economico': numEconomico,
       'Marca': marca,
@@ -118,5 +150,9 @@ class TransformadoresXZona {
       'Reparado': reparado,
       'Motivo': motivo,
     };
+    if (motivos != null) {
+      json['Motivos'] = motivos!.map((m) => m.toJson()).toList();
+    }
+    return json;
   }
 }
