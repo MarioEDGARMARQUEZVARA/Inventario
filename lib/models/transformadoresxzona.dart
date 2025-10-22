@@ -53,7 +53,7 @@ class TransformadoresXZona {
   DateTime? fechaMovimiento;
   bool reparado;
   String? motivo;
-  List<Motivo>? motivos; // Nuevo campo opcional
+  List<Motivo>? motivos; 
 
   TransformadoresXZona({
     this.id,

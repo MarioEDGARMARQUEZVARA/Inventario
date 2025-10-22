@@ -241,7 +241,7 @@ class _Transformadores2025ScreenState
                 .toList();
           }
 
-          // 🔧 FILTROS POR RANGO
+          
           if (selectedCargas != null) {
             final parts = selectedCargas!.split("-");
             final min = int.parse(parts[0].trim());
@@ -366,7 +366,9 @@ class _Transformadores2025ScreenState
                   width: 200,
                   height: 45,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () async {
+                      exportTransformadoresToExcel(context);
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       shape: RoundedRectangleBorder(

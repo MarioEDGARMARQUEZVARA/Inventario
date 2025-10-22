@@ -176,8 +176,8 @@ class _TransformadoresxzonaScreenState
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      onPressed: () {
-                        // lógica exportar a XLSX
+                      onPressed: () async {
+                        await exportTransformadoresxzonaToExcel(context);
                       },
                       child: const Text(
                         'Exportar a xlsx',

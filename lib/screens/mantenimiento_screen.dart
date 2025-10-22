@@ -90,7 +90,9 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
 
                   List<String> values = [];
 
-                  if (value == "estado" || value == "marca" || value == "area") {
+                  if (value == "estado" ||
+                      value == "marca" ||
+                      value == "area") {
                     values = uniqueValues[value] ?? [];
                   } else if (value == "litros") {
                     values = generarRangos(0, 150, 10);
@@ -139,13 +141,19 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
                   }
                 },
                 itemBuilder: (context) => const [
-                  PopupMenuItem(value: "estado", child: Text("Filtrar por Estado")),
-                  PopupMenuItem(value: "marca", child: Text("Filtrar por Marca")),
+                  PopupMenuItem(
+                      value: "estado", child: Text("Filtrar por Estado")),
+                  PopupMenuItem(
+                      value: "marca", child: Text("Filtrar por Marca")),
                   PopupMenuItem(value: "area", child: Text("Filtrar por Área")),
-                  PopupMenuItem(value: "litros", child: Text("Filtrar por Litros")),
-                  PopupMenuItem(value: "capacidad", child: Text("Filtrar por Capacidad")),
-                  PopupMenuItem(value: "kilos", child: Text("Filtrar por Kilos")),
-                  PopupMenuItem(value: "fases", child: Text("Filtrar por Fases")),
+                  PopupMenuItem(
+                      value: "litros", child: Text("Filtrar por Litros")),
+                  PopupMenuItem(
+                      value: "capacidad", child: Text("Filtrar por Capacidad")),
+                  PopupMenuItem(
+                      value: "kilos", child: Text("Filtrar por Kilos")),
+                  PopupMenuItem(
+                      value: "fases", child: Text("Filtrar por Fases")),
                   PopupMenuDivider(),
                   PopupMenuItem(value: "clear", child: Text("Quitar filtro")),
                 ],
@@ -168,8 +176,9 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
 
           // aplicar filtros
           if (selectedEstado != null) {
-            mantenimientos =
-                mantenimientos.where((m) => m.estado == selectedEstado).toList();
+            mantenimientos = mantenimientos
+                .where((m) => m.estado == selectedEstado)
+                .toList();
           }
           if (selectedMarca != null) {
             mantenimientos =
@@ -261,7 +270,8 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
                     }
 
                     return Container(
-                      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                      margin: const EdgeInsets.symmetric(
+                          vertical: 4, horizontal: 8),
                       decoration: BoxDecoration(
                         color: Colors.grey[300],
                         borderRadius: BorderRadius.circular(8),
@@ -274,14 +284,16 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
                         ),
                         subtitle: Text(
                           subtitleValue,
-                          style: const TextStyle(color: Colors.grey, fontSize: 14),
+                          style:
+                              const TextStyle(color: Colors.grey, fontSize: 14),
                         ),
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                                  MantenimientoOperationsScreen(mantenimiento: m),
+                                  MantenimientoOperationsScreen(
+                                      mantenimiento: m),
                             ),
                           );
                         },
@@ -296,8 +308,8 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
                   width: 200,
                   height: 45,
                   child: ElevatedButton(
-                    onPressed: () {
-                      // lógica de exportar se agregará después
+                    onPressed: () async {
+                      await exportMantenimientosToExcel(context);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,

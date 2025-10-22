@@ -115,7 +115,9 @@ class TransformadoresActualesOperationsScreen extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                onPressed: () {},
+                onPressed: () async {
+                  await exportTransformadoresToExcel(context);
+                },
                 child: const Text('Exportar a xlsx', style: TextStyle(color: Colors.white)),
               ),
             ),
