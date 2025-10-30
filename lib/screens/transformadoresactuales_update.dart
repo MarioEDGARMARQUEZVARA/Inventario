@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:inventario_proyecto/models/tranformadoresactuales.dart';
 import 'package:inventario_proyecto/services/transformadores_service.dart';
 
@@ -35,7 +36,6 @@ class _TransformadoresActualesUpdateScreenState extends State<TransformadoresAct
   late DateTime fechaEntradaTaller;
   late DateTime fechaSalidaTaller;
   late DateTime fechaEntregaAlmacen;
-  late TextEditingController salidaMantenimientoController;
   late bool salidaMantenimiento;
   DateTime? fechaSalidaMantenimiento;
   late TextEditingController motivoController;
@@ -47,6 +47,10 @@ class _TransformadoresActualesUpdateScreenState extends State<TransformadoresAct
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
+
+  String _formatDate(DateTime date) {
+    return DateFormat('dd/MM/yyyy').format(date);
+  }
 
   @override
   void initState() {
@@ -73,13 +77,12 @@ class _TransformadoresActualesUpdateScreenState extends State<TransformadoresAct
     fechaEntradaTaller = t.fecha_de_entrada_al_taller;
     fechaSalidaTaller = t.fecha_de_salida_del_taller;
     fechaEntregaAlmacen = t.fecha_entrega_almacen;
+    salidaMantenimiento = t.salida_mantenimiento;
+    fechaSalidaMantenimiento = t.fecha_salida_mantenimiento;
     motivoController = TextEditingController(text: t.motivo ?? '');
     cargasController = TextEditingController(text: t.cargas.toString());
-    motivoController = TextEditingController(text: t.motivo ?? '');
-    areaEntregaReparadoController = TextEditingController(text: t.area_fecha_de_entrega_transformador_reparado ?? '');
-    motivoController = TextEditingController(text: t.motivo ?? '');
     bajaController = TextEditingController(text: t.baja ?? '');
-    motivoController = TextEditingController(text: t.motivo ?? '');
+    areaEntregaReparadoController = TextEditingController(text: t.area_fecha_de_entrega_transformador_reparado ?? '');
   }
 
   Future<void> _selectDate(BuildContext context, DateTime initialDate, Function(DateTime) onSelected) async {
@@ -90,30 +93,6 @@ class _TransformadoresActualesUpdateScreenState extends State<TransformadoresAct
       lastDate: DateTime(2100),
     );
     if (picked != null) onSelected(picked);
-  }
-
-  @override
-  void dispose() {
-    areaController.dispose();
-    marcaController.dispose();
-    aceiteController.dispose();
-    economicoController.dispose();
-    capacidadKVAController.dispose();
-    fasesController.dispose();
-    serieController.dispose();
-    pesoPlacaController.dispose();
-    valorPrueba1Controller.dispose();
-    valorPrueba2Controller.dispose();
-    valorPrueba3Controller.dispose();
-    resistenciaAislamientoController.dispose();
-    rigidezDielecricaController.dispose();
-    estadoController.dispose();
-    salidaMantenimientoController.dispose();
-    bajaController.dispose();
-    cargasController.dispose();
-    areaEntregaReparadoController.dispose();
-    motivoController.dispose();
-    super.dispose();
   }
 
   Future<void> _actualizarTransformador() async {
@@ -152,179 +131,362 @@ class _TransformadoresActualesUpdateScreenState extends State<TransformadoresAct
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Editar Transformador Actual')),
+      appBar: AppBar(
+        title: const Text('Editar Transformador Actual'),
+        backgroundColor: Colors.blue[700],
+        foregroundColor: Colors.white,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(
-                controller: areaController,
-                decoration: const InputDecoration(labelText: 'Área'),
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              ListTile(
-                title: Text('Fecha de llegada: ${fechaDeLlegada.day}/${fechaDeLlegada.month}/${fechaDeLlegada.year}'),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: () => _selectDate(context, fechaDeLlegada, (d) => setState(() => fechaDeLlegada = d)),
-              ),
-              DropdownButtonFormField<String>(
-                value: mesSeleccionado,
-                items: meses.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
-                onChanged: (v) => setState(() => mesSeleccionado = v),
-                decoration: const InputDecoration(labelText: 'Mes'),
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              TextFormField(
-                controller: marcaController,
-                decoration: const InputDecoration(labelText: 'Marca'),
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              TextFormField(
-                controller: aceiteController,
-                decoration: const InputDecoration(labelText: 'Aceite (LTS)'),
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              TextFormField(
-                controller: economicoController,
-                decoration: const InputDecoration(labelText: 'Económico'),
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              TextFormField(
-                controller: capacidadKVAController,
-                decoration: const InputDecoration(labelText: 'Capacidad KVA'),
-                keyboardType: TextInputType.number,
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              TextFormField(
-                controller: fasesController,
-                decoration: const InputDecoration(labelText: 'Fases'),
-                keyboardType: TextInputType.number,
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              TextFormField(
-                controller: serieController,
-                decoration: const InputDecoration(labelText: 'Serie'),
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              TextFormField(
-                controller: pesoPlacaController,
-                decoration: const InputDecoration(labelText: 'Peso placa de datos (KGS)'),
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              ListTile(
-                title: Text('Fecha fabricación: ${fechaFabricacion.day}/${fechaFabricacion.month}/${fechaFabricacion.year}'),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: () => _selectDate(context, fechaFabricacion, (d) => setState(() => fechaFabricacion = d)),
-              ),
-              ListTile(
-                title: Text('Fecha prueba: ${fechaPrueba.day}/${fechaPrueba.month}/${fechaPrueba.year}'),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: () => _selectDate(context, fechaPrueba, (d) => setState(() => fechaPrueba = d)),
-              ),
-              TextFormField(
-                controller: valorPrueba1Controller,
-                decoration: const InputDecoration(labelText: 'Valor prueba 1'),
-              ),
-              TextFormField(
-                controller: valorPrueba2Controller,
-                decoration: const InputDecoration(labelText: 'Valor prueba 2'),
-              ),
-              TextFormField(
-                controller: valorPrueba3Controller,
-                decoration: const InputDecoration(labelText: 'Valor prueba 3'),
-              ),
-              TextFormField(
-                controller: resistenciaAislamientoController,
-                decoration: const InputDecoration(labelText: 'Resistencia aislamiento (megaoms)'),
-                keyboardType: TextInputType.number,
-              ),
-              TextFormField(
-                controller: rigidezDielecricaController,
-                decoration: const InputDecoration(labelText: 'Rigidez dieléctrica (kv)'),
-              ),
-              TextFormField(
-                controller: estadoController,
-                decoration: const InputDecoration(labelText: 'Estado'),
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              ListTile(
-                title: Text('Fecha entrada taller: ${fechaEntradaTaller.day}/${fechaEntradaTaller.month}/${fechaEntradaTaller.year}'),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: () => _selectDate(context, fechaEntradaTaller, (d) => setState(() => fechaEntradaTaller = d)),
-              ),
-              ListTile(
-                title: Text('Fecha salida taller: ${fechaSalidaTaller.day}/${fechaSalidaTaller.month}/${fechaSalidaTaller.year}'),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: () => _selectDate(context, fechaSalidaTaller, (d) => setState(() => fechaSalidaTaller = d)),
-              ),
-              ListTile(
-                title: Text('Fecha entrega almacén: ${fechaEntregaAlmacen.day}/${fechaEntregaAlmacen.month}/${fechaEntregaAlmacen.year}'),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: () => _selectDate(context, fechaEntregaAlmacen, (d) => setState(() => fechaEntregaAlmacen = d)),
-              ),
-              DropdownButtonFormField<bool>(
-                value: salidaMantenimiento,
-                decoration: const InputDecoration(labelText: 'Salida mantenimiento'),
-                items: const [
-                  DropdownMenuItem(value: false, child: Text('No')),
-                  DropdownMenuItem(value: true, child: Text('Sí')),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    salidaMantenimiento = value ?? false;
-                    if (!salidaMantenimiento) {
-                      fechaSalidaMantenimiento = null;
-                      motivoController.clear();
-                    }
-                  });
-                },
-                validator: (v) => v == null ? 'Campo requerido' : null,
-              ),
-              if (salidaMantenimiento) ...[
-                ListTile(
-                  title: Text(
-                    fechaSalidaMantenimiento == null
-                        ? 'Selecciona fecha salida mantenimiento'
-                        : 'Fecha salida mantenimiento: ${fechaSalidaMantenimiento!.day}/${fechaSalidaMantenimiento!.month}/${fechaSalidaMantenimiento!.year}'
-                  ),
-                  trailing: const Icon(Icons.calendar_today),
-                  onTap: () => _selectDate(context, fechaSalidaMantenimiento ?? DateTime.now(), (d) => setState(() => fechaSalidaMantenimiento = d)),
-                ),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
                 TextFormField(
-                  controller: motivoController,
-                  decoration: const InputDecoration(labelText: 'Motivo'),
+                  controller: areaController,
+                  decoration: const InputDecoration(
+                    labelText: 'Área',
+                    border: OutlineInputBorder(),
+                  ),
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
+                const SizedBox(height: 16),
+
+                InkWell(
+                  onTap: () => _selectDate(context, fechaDeLlegada, (d) => setState(() => fechaDeLlegada = d)),
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Fecha de llegada',
+                      border: OutlineInputBorder(),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(_formatDate(fechaDeLlegada)),
+                        const Icon(Icons.calendar_today, size: 20),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                DropdownButtonFormField<String>(
+                  value: mesSeleccionado,
+                  items: meses.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                  onChanged: (v) => setState(() => mesSeleccionado = v),
+                  decoration: const InputDecoration(
+                    labelText: 'Mes',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                TextFormField(
+                  controller: marcaController,
+                  decoration: const InputDecoration(
+                    labelText: 'Marca',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                ),
+                const SizedBox(height: 16),
+
+                TextFormField(
+                  controller: aceiteController,
+                  decoration: const InputDecoration(
+                    labelText: 'Aceite (LTS)',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                ),
+                const SizedBox(height: 16),
+
+                TextFormField(
+                  controller: economicoController,
+                  decoration: const InputDecoration(
+                    labelText: 'Económico',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                ),
+                const SizedBox(height: 16),
+
+                TextFormField(
+                  controller: capacidadKVAController,
+                  decoration: const InputDecoration(
+                    labelText: 'Capacidad KVA',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                ),
+                const SizedBox(height: 16),
+
+                TextFormField(
+                  controller: fasesController,
+                  decoration: const InputDecoration(
+                    labelText: 'Fases',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                ),
+                const SizedBox(height: 16),
+
+                TextFormField(
+                  controller: serieController,
+                  decoration: const InputDecoration(
+                    labelText: 'Serie',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                ),
+                const SizedBox(height: 16),
+
+                TextFormField(
+                  controller: pesoPlacaController,
+                  decoration: const InputDecoration(
+                    labelText: 'Peso placa de datos (KGS)',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                ),
+                const SizedBox(height: 16),
+
+                InkWell(
+                  onTap: () => _selectDate(context, fechaFabricacion, (d) => setState(() => fechaFabricacion = d)),
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Fecha fabricación',
+                      border: OutlineInputBorder(),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(_formatDate(fechaFabricacion)),
+                        const Icon(Icons.calendar_today, size: 20),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                InkWell(
+                  onTap: () => _selectDate(context, fechaPrueba, (d) => setState(() => fechaPrueba = d)),
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Fecha prueba',
+                      border: OutlineInputBorder(),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(_formatDate(fechaPrueba)),
+                        const Icon(Icons.calendar_today, size: 20),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                TextFormField(
+                  controller: valorPrueba1Controller,
+                  decoration: const InputDecoration(
+                    labelText: 'Valor prueba 1',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                TextFormField(
+                  controller: valorPrueba2Controller,
+                  decoration: const InputDecoration(
+                    labelText: 'Valor prueba 2',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                TextFormField(
+                  controller: valorPrueba3Controller,
+                  decoration: const InputDecoration(
+                    labelText: 'Valor prueba 3',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                TextFormField(
+                  controller: resistenciaAislamientoController,
+                  decoration: const InputDecoration(
+                    labelText: 'Resistencia aislamiento (megaoms)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                TextFormField(
+                  controller: rigidezDielecricaController,
+                  decoration: const InputDecoration(
+                    labelText: 'Rigidez dieléctrica (kv)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                TextFormField(
+                  controller: estadoController,
+                  decoration: const InputDecoration(
+                    labelText: 'Estado',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                ),
+                const SizedBox(height: 16),
+
+                InkWell(
+                  onTap: () => _selectDate(context, fechaEntradaTaller, (d) => setState(() => fechaEntradaTaller = d)),
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Fecha entrada taller',
+                      border: OutlineInputBorder(),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(_formatDate(fechaEntradaTaller)),
+                        const Icon(Icons.calendar_today, size: 20),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                InkWell(
+                  onTap: () => _selectDate(context, fechaSalidaTaller, (d) => setState(() => fechaSalidaTaller = d)),
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Fecha salida taller',
+                      border: OutlineInputBorder(),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(_formatDate(fechaSalidaTaller)),
+                        const Icon(Icons.calendar_today, size: 20),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                InkWell(
+                  onTap: () => _selectDate(context, fechaEntregaAlmacen, (d) => setState(() => fechaEntregaAlmacen = d)),
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Fecha entrega almacén',
+                      border: OutlineInputBorder(),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(_formatDate(fechaEntregaAlmacen)),
+                        const Icon(Icons.calendar_today, size: 20),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                CheckboxListTile(
+                  title: const Text('Salida mantenimiento'),
+                  value: salidaMantenimiento,
+                  onChanged: (v) => setState(() => salidaMantenimiento = v ?? false),
+                  controlAffinity: ListTileControlAffinity.leading,
+                ),
+                const SizedBox(height: 16),
+
+                if (salidaMantenimiento) ...[
+                  InkWell(
+                    onTap: () => _selectDate(
+                      context,
+                      fechaSalidaMantenimiento ?? DateTime.now(),
+                      (d) => setState(() => fechaSalidaMantenimiento = d),
+                    ),
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Fecha salida mantenimiento',
+                        border: OutlineInputBorder(),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(_formatDate(fechaSalidaMantenimiento ?? DateTime.now())),
+                          const Icon(Icons.calendar_today, size: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  TextFormField(
+                    controller: motivoController,
+                    decoration: const InputDecoration(
+                      labelText: 'Motivo',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
+                TextFormField(
+                  controller: bajaController,
+                  decoration: const InputDecoration(
+                    labelText: 'Baja',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                TextFormField(
+                  controller: cargasController,
+                  decoration: const InputDecoration(
+                    labelText: 'Cargas',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 16),
+
+                TextFormField(
+                  controller: areaEntregaReparadoController,
+                  decoration: const InputDecoration(
+                    labelText: 'Área fecha entrega transformador reparado',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                ElevatedButton(
+                  onPressed: () async {
+                    if (_formKey.currentState?.validate() ?? false) {
+                      await _actualizarTransformador();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Transformador actualizado correctamente')),
+                      );
+                      Navigator.pop(context);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue[700],
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: const Text('Guardar cambios', style: TextStyle(fontSize: 16)),
+                ),
               ],
-              TextFormField(
-                controller: bajaController,
-                decoration: const InputDecoration(labelText: 'Baja'),
-              ),
-              TextFormField(
-                controller: cargasController,
-                decoration: const InputDecoration(labelText: 'Cargas'),
-                keyboardType: TextInputType.number,
-              ),
-              TextFormField(
-                controller: areaEntregaReparadoController,
-                decoration: const InputDecoration(labelText: 'Área fecha entrega transformador reparado'),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () async {
-                  if (_formKey.currentState?.validate() ?? false) {
-                    await _actualizarTransformador();
-                    Navigator.pop(context); // Regresa y refresca la lista
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Transformador actualizado')),
-                    );
-                  }
-                },
-                child: const Text('Guardar cambios'),
-              ),
-            ],
+            ),
           ),
         ),
       ),

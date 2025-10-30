@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:inventario_proyecto/models/tranformadoresactuales.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:inventario_proyecto/services/transformadores_service.dart';
+import 'package:intl/intl.dart';
 
 class TransformadoresActualesAddScreen extends StatefulWidget {
   const TransformadoresActualesAddScreen({super.key});
@@ -15,7 +16,6 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
 
   final areaController = TextEditingController();
   DateTime fechaDeLlegada = DateTime.now();
-  final mesController = TextEditingController();
   final marcaController = TextEditingController();
   final aceiteController = TextEditingController();
   final economicoController = TextEditingController();
@@ -35,8 +35,8 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
   DateTime fechaSalidaTaller = DateTime.now();
   DateTime fechaEntregaAlmacen = DateTime.now();
   bool salidaMantenimiento = false;
-  DateTime? fechaSalidaMantenimiento; // <-- Permite nulo
-  final motivoController = TextEditingController(); // <-- Agrega si no existe
+  DateTime? fechaSalidaMantenimiento;
+  final motivoController = TextEditingController();
   final bajaController = TextEditingController();
   final cargasController = TextEditingController();
   final areaEntregaReparadoController = TextEditingController();
@@ -46,6 +46,10 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
   String? mesSeleccionado;
+
+  String _formatDate(DateTime date) {
+    return DateFormat('dd/MM/yyyy').format(date);
+  }
 
   Future<void> _selectDate(BuildContext context, DateTime initialDate, Function(DateTime) onSelected) async {
     final picked = await showDatePicker(
@@ -60,7 +64,6 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
   @override
   void dispose() {
     areaController.dispose();
-    mesController.dispose();
     marcaController.dispose();
     aceiteController.dispose();
     economicoController.dispose();
@@ -127,195 +130,349 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Agregar Transformador Actual')),
+      appBar: AppBar(
+        title: const Text('Agregar Transformador Actual'),
+        backgroundColor: Colors.blue[700],
+        foregroundColor: Colors.white,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(
-                controller: areaController,
-                decoration: const InputDecoration(labelText: 'Área'),
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              ListTile(
-                title: Text('Fecha de llegada: ${fechaDeLlegada.day}/${fechaDeLlegada.month}/${fechaDeLlegada.year}'),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: () => _selectDate(context, fechaDeLlegada, (d) => setState(() => fechaDeLlegada = d)),
-              ),
-              DropdownButtonFormField<String>(
-                value: mesSeleccionado,
-                decoration: const InputDecoration(labelText: 'Mes'),
-                items: meses.map((mes) {
-                  return DropdownMenuItem(
-                    value: mes,
-                    child: Text(mes),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    mesSeleccionado = value;
-                  });
-                },
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              TextFormField(
-                controller: marcaController,
-                decoration: const InputDecoration(labelText: 'Marca'),
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              TextFormField(
-                controller: aceiteController,
-                decoration: const InputDecoration(labelText: 'Aceite'),
-                keyboardType: TextInputType.number,
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              TextFormField(
-                controller: economicoController,
-                decoration: const InputDecoration(labelText: 'Económico'),
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              TextFormField(
-                controller: capacidadKVAController,
-                decoration: const InputDecoration(labelText: 'Capacidad KVA'),
-                keyboardType: TextInputType.number,
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              TextFormField(
-                controller: fasesController,
-                decoration: const InputDecoration(labelText: 'Fases'),
-                keyboardType: TextInputType.number,
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              TextFormField(
-                controller: serieController,
-                decoration: const InputDecoration(labelText: 'Serie'),
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              TextFormField(
-                controller: pesoPlacaController,
-                decoration: const InputDecoration(labelText: 'Peso placa de datos'),
-                keyboardType: TextInputType.number,
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              ListTile(
-                title: Text('Fecha fabricación: ${fechaFabricacion.day}/${fechaFabricacion.month}/${fechaFabricacion.year}'),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: () => _selectDate(context, fechaFabricacion, (d) => setState(() => fechaFabricacion = d)),
-              ),
-              ListTile(
-                title: Text('Fecha prueba: ${fechaPrueba.day}/${fechaPrueba.month}/${fechaPrueba.year}'),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: () => _selectDate(context, fechaPrueba, (d) => setState(() => fechaPrueba = d)),
-              ),
-              TextFormField(
-                controller: valorPrueba1Controller,
-                decoration: const InputDecoration(labelText: 'Valor prueba 1'),
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              TextFormField(
-                controller: valorPrueba2Controller,
-                decoration: const InputDecoration(labelText: 'Valor prueba 2'),
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              TextFormField(
-                controller: valorPrueba3Controller,
-                decoration: const InputDecoration(labelText: 'Valor prueba 3'),
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              TextFormField(
-                controller: resistenciaAislamientoController,
-                decoration: const InputDecoration(labelText: 'Resistencia aislamiento megaoms'),
-                keyboardType: TextInputType.number,
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              TextFormField(
-                controller: rigidezDielecricaController,
-                decoration: const InputDecoration(labelText: 'Rigidez dieléctrica KV'),
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              TextFormField(
-                controller: estadoController,
-                decoration: const InputDecoration(labelText: 'Estado'),
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              ListTile(
-                title: Text('Fecha entrada al taller: ${fechaEntradaTaller.day}/${fechaEntradaTaller.month}/${fechaEntradaTaller.year}'),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: () => _selectDate(context, fechaEntradaTaller, (d) => setState(() => fechaEntradaTaller = d)),
-              ),
-              ListTile(
-                title: Text('Fecha salida del taller: ${fechaSalidaTaller.day}/${fechaSalidaTaller.month}/${fechaSalidaTaller.year}'),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: () => _selectDate(context, fechaSalidaTaller, (d) => setState(() => fechaSalidaTaller = d)),
-              ),
-              ListTile(
-                title: Text('Fecha entrega almacén: ${fechaEntregaAlmacen.day}/${fechaEntregaAlmacen.month}/${fechaEntregaAlmacen.year}'),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: () => _selectDate(context, fechaEntregaAlmacen, (d) => setState(() => fechaEntregaAlmacen = d)),
-              ),
-              DropdownButtonFormField<bool>(
-                value: salidaMantenimiento,
-                decoration: const InputDecoration(labelText: 'Salida mantenimiento'),
-                items: const [
-                  DropdownMenuItem(value: false, child: Text('No')),
-                  DropdownMenuItem(value: true, child: Text('Sí')),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    salidaMantenimiento = value ?? false;
-                    if (!salidaMantenimiento) {
-                      fechaSalidaMantenimiento = null;
-                      motivoController.clear();
-                    }
-                  });
-                },
-                validator: (v) => v == null ? 'Campo requerido' : null,
-              ),
-              if (salidaMantenimiento) ...[
-                ListTile(
-                  title: Text(
-                    fechaSalidaMantenimiento == null
-                        ? 'Selecciona fecha salida mantenimiento'
-                        : 'Fecha salida mantenimiento: ${fechaSalidaMantenimiento!.day}/${fechaSalidaMantenimiento!.month}/${fechaSalidaMantenimiento!.year}'
-                  ),
-                  trailing: const Icon(Icons.calendar_today),
-                  onTap: () => _selectDate(context, DateTime.now(), (d) => setState(() => fechaSalidaMantenimiento = d)),
-                ),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
                 TextFormField(
-                  controller: motivoController,
-                  decoration: const InputDecoration(labelText: 'Motivo'),
+                  controller: areaController,
+                  decoration: const InputDecoration(
+                    labelText: 'Área',
+                    border: OutlineInputBorder(),
+                  ),
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
+                const SizedBox(height: 16),
+                InkWell(
+                  onTap: () => _selectDate(context, fechaDeLlegada, (d) => setState(() => fechaDeLlegada = d)),
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Fecha de llegada',
+                      border: OutlineInputBorder(),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(_formatDate(fechaDeLlegada)),
+                        const Icon(Icons.calendar_today, size: 20),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: mesSeleccionado,
+                  decoration: const InputDecoration(
+                    labelText: 'Mes',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: meses.map((mes) {
+                    return DropdownMenuItem(
+                      value: mes,
+                      child: Text(mes),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      mesSeleccionado = value;
+                    });
+                  },
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: marcaController,
+                  decoration: const InputDecoration(
+                    labelText: 'Marca',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: aceiteController,
+                  decoration: const InputDecoration(
+                    labelText: 'Aceite (LTS)',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: economicoController,
+                  decoration: const InputDecoration(
+                    labelText: 'Económico',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: capacidadKVAController,
+                  decoration: const InputDecoration(
+                    labelText: 'Capacidad KVA',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: fasesController,
+                  decoration: const InputDecoration(
+                    labelText: 'Fases',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: serieController,
+                  decoration: const InputDecoration(
+                    labelText: 'Serie',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: pesoPlacaController,
+                  decoration: const InputDecoration(
+                    labelText: 'Peso placa de datos (KGS)',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                ),
+                const SizedBox(height: 16),
+                InkWell(
+                  onTap: () => _selectDate(context, fechaFabricacion, (d) => setState(() => fechaFabricacion = d)),
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Fecha fabricación',
+                      border: OutlineInputBorder(),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(_formatDate(fechaFabricacion)),
+                        const Icon(Icons.calendar_today, size: 20),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                InkWell(
+                  onTap: () => _selectDate(context, fechaPrueba, (d) => setState(() => fechaPrueba = d)),
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Fecha prueba',
+                      border: OutlineInputBorder(),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(_formatDate(fechaPrueba)),
+                        const Icon(Icons.calendar_today, size: 20),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: valorPrueba1Controller,
+                  decoration: const InputDecoration(
+                    labelText: 'Valor prueba 1',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: valorPrueba2Controller,
+                  decoration: const InputDecoration(
+                    labelText: 'Valor prueba 2',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: valorPrueba3Controller,
+                  decoration: const InputDecoration(
+                    labelText: 'Valor prueba 3',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: resistenciaAislamientoController,
+                  decoration: const InputDecoration(
+                    labelText: 'Resistencia aislamiento (megaoms)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: rigidezDielecricaController,
+                  decoration: const InputDecoration(
+                    labelText: 'Rigidez dieléctrica (kv)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: estadoController,
+                  decoration: const InputDecoration(
+                    labelText: 'Estado',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                ),
+                const SizedBox(height: 16),
+                InkWell(
+                  onTap: () => _selectDate(context, fechaEntradaTaller, (d) => setState(() => fechaEntradaTaller = d)),
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Fecha entrada taller',
+                      border: OutlineInputBorder(),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(_formatDate(fechaEntradaTaller)),
+                        const Icon(Icons.calendar_today, size: 20),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                InkWell(
+                  onTap: () => _selectDate(context, fechaSalidaTaller, (d) => setState(() => fechaSalidaTaller = d)),
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Fecha salida taller',
+                      border: OutlineInputBorder(),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(_formatDate(fechaSalidaTaller)),
+                        const Icon(Icons.calendar_today, size: 20),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                InkWell(
+                  onTap: () => _selectDate(context, fechaEntregaAlmacen, (d) => setState(() => fechaEntregaAlmacen = d)),
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Fecha entrega almacén',
+                      border: OutlineInputBorder(),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(_formatDate(fechaEntregaAlmacen)),
+                        const Icon(Icons.calendar_today, size: 20),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                CheckboxListTile(
+                  title: const Text('Salida mantenimiento'),
+                  value: salidaMantenimiento,
+                  onChanged: (v) => setState(() => salidaMantenimiento = v ?? false),
+                  controlAffinity: ListTileControlAffinity.leading,
+                ),
+                const SizedBox(height: 16),
+                if (salidaMantenimiento) ...[
+                  InkWell(
+                    onTap: () => _selectDate(
+                      context,
+                      fechaSalidaMantenimiento ?? DateTime.now(),
+                      (d) => setState(() => fechaSalidaMantenimiento = d),
+                    ),
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Fecha salida mantenimiento',
+                        border: OutlineInputBorder(),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(_formatDate(fechaSalidaMantenimiento ?? DateTime.now())),
+                          const Icon(Icons.calendar_today, size: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: motivoController,
+                    decoration: const InputDecoration(
+                      labelText: 'Motivo',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                TextFormField(
+                  controller: bajaController,
+                  decoration: const InputDecoration(
+                    labelText: 'Baja',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: cargasController,
+                  decoration: const InputDecoration(
+                    labelText: 'Cargas',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: areaEntregaReparadoController,
+                  decoration: const InputDecoration(
+                    labelText: 'Área fecha entrega transformador reparado',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (_formKey.currentState?.validate() ?? false) {
+                      await _guardarTransformador();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Transformador agregado correctamente')),
+                      );
+                      Navigator.pop(context);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue[700],
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: const Text('Guardar', style: TextStyle(fontSize: 16)),
+                ),
               ],
-              TextFormField(
-                controller: bajaController,
-                decoration: const InputDecoration(labelText: 'Baja'),
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              TextFormField(
-                controller: cargasController,
-                decoration: const InputDecoration(labelText: 'Cargas'),
-                keyboardType: TextInputType.number,
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              TextFormField(
-                controller: areaEntregaReparadoController,
-                decoration: const InputDecoration(labelText: 'Área fecha de entrega transformador reparado'),
-                validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () async {
-                  if (_formKey.currentState?.validate() ?? false) {
-                    await _guardarTransformador();
-                    Navigator.pop(context);
-                  }
-                },
-                child: const Text('Guardar'),
-              ),
-            ],
+            ),
           ),
         ),
       ),

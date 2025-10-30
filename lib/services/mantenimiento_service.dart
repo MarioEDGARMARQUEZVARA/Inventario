@@ -23,21 +23,21 @@ Future<List<Mantenimiento>> getMantenimientos() async {
       print('getMantenimientos parse error for doc ${doc.id}: $e');
       return Mantenimiento(
         area: '',
-        capacidad: 0.0,
+        capacidadKVA: 0.0,
         economico: '',
         estado: '',
         fases: 0,
         fecha_de_alta: null,
-        fecha_de_salida: null,
+        fecha_de_salida_del_taller: null,
         fecha_fabricacion: null,
-        fecha_llegada: null,
+        fecha_de_entrada_al_taller: null,
         fecha_prueba: RangoFecha(inicio: null, fin: null),
-        kilos: '',
-        litros: '',
+        peso_placa_de_datos: '',
+        aceite: '',
         marca: '',
         numero_mantenimiento: 0,
-        resistencia_aislamiento: 0,
-        rigidez_dieletrica: '',
+        resistencia_aislamiento_megaoms: 0,
+        rigidez_dielecrica_kv: '',
         serie: '',
       );
     }
@@ -124,21 +124,21 @@ Stream<List<Mantenimiento>> mantenimientosStream() {
           print('mantenimientosStream parse error for doc ${doc.id}: $e');
           return Mantenimiento(
             area: '',
-            capacidad: 0.0,
+            capacidadKVA: 0.0,
             economico: '',
             estado: '',
             fases: 0,
             fecha_de_alta: null,
-            fecha_de_salida: null,
+            fecha_de_salida_del_taller: null,
             fecha_fabricacion: null,
-            fecha_llegada: null,
+            fecha_de_entrada_al_taller: null,
             fecha_prueba: RangoFecha(inicio: null, fin: null),
-            kilos: '',
-            litros: '',
+            peso_placa_de_datos: '',
+            aceite: '',
             marca: '',
             numero_mantenimiento: 0,
-            resistencia_aislamiento: 0,
-            rigidez_dieletrica: '',
+            resistencia_aislamiento_megaoms: 0,
+            rigidez_dielecrica_kv: '',
             serie: '',
           );
         }
@@ -169,25 +169,25 @@ Future<void> exportMantenimientosToExcel(BuildContext context) async {
   for (int i = 0; i < items.length; i++) {
     var item = items[i];
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: i + 1)).value = TextCellValue(item.numero_mantenimiento?.toString() ?? '');
-    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: i + 1)).value = TextCellValue(item.fecha_llegada?.toString() ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: i + 1)).value = TextCellValue(item.fecha_de_entrada_al_taller?.toString() ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: i + 1)).value = TextCellValue(item.area ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: i + 1)).value = TextCellValue(item.economico ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: i + 1)).value = TextCellValue(item.marca ?? '');
-    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: i + 1)).value = TextCellValue(item.capacidad?.toString() ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: i + 1)).value = TextCellValue(item.capacidadKVA?.toString() ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 6, rowIndex: i + 1)).value = TextCellValue(item.fases?.toString() ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 7, rowIndex: i + 1)).value = TextCellValue(item.serie ?? '');
-    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 8, rowIndex: i + 1)).value = TextCellValue(item.litros ?? '');
-    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 9, rowIndex: i + 1)).value = TextCellValue(item.kilos ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 8, rowIndex: i + 1)).value = TextCellValue(item.aceite ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 9, rowIndex: i + 1)).value = TextCellValue(item.peso_placa_de_datos ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 10, rowIndex: i + 1)).value = TextCellValue(item.fecha_fabricacion?.toString() ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 11, rowIndex: i + 1)).value = TextCellValue(item.fecha_prueba?.toString() ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 12, rowIndex: i + 1)).value = TextCellValue(item.rt_fase_a.toString() ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 13, rowIndex: i + 1)).value = TextCellValue(item.rt_fase_b.toString() ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 14, rowIndex: i + 1)).value = TextCellValue(item.rt_fase_c.toString() ?? '');
-    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 15, rowIndex: i + 1)).value = TextCellValue(item.resistencia_aislamiento?.toString() ?? '');
-    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 16, rowIndex: i + 1)).value = TextCellValue(item.rigidez_dieletrica ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 15, rowIndex: i + 1)).value = TextCellValue(item.resistencia_aislamiento_megaoms?.toString() ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 16, rowIndex: i + 1)).value = TextCellValue(item.rigidez_dielecrica_kv ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 17, rowIndex: i + 1)).value = TextCellValue(item.estado ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 18, rowIndex: i + 1)).value = TextCellValue(item.fecha_de_alta.toString() ?? '');
-    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 19, rowIndex: i + 1)).value = TextCellValue(item.fecha_de_salida?.toString() ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 19, rowIndex: i + 1)).value = TextCellValue(item.fecha_de_salida_del_taller?.toString() ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 20, rowIndex: i + 1)).value = TextCellValue(item.motivo ?? '');
 
     

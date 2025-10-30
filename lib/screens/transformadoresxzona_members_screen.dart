@@ -2,28 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:inventario_proyecto/models/transformadoresxzona.dart';
 import 'package:inventario_proyecto/screens/transformadoresxzona_operations_screen.dart';
 import 'package:inventario_proyecto/screens/transformadoresxzona_add_screen.dart';
-import 'package:inventario_proyecto/services/transformadoresxzona_service.dart';
-
-// Modelo de ejemplo
-class Tranformadoresactuales {
-  final String zona;
-  final String status;
-  final int cargas;
-  final int peso;
-  final int litros;
-  final int fases;
-  final int capacidad;
-
-  Tranformadoresactuales({
-    required this.zona,
-    required this.status,
-    required this.cargas,
-    required this.peso,
-    required this.litros,
-    required this.fases,
-    required this.capacidad,
-  });
-}
+import 'package:inventario_proyecto/providers/transformadoresxzona_provider.dart';
+import 'package:provider/provider.dart';
 
 class TransformadoresxzonaMembersScreen extends StatefulWidget {
   final String zona;
@@ -40,86 +20,17 @@ class TransformadoresxzonaMembersScreen extends StatefulWidget {
 
 class _TransformadoresxzonaMembersScreenState
     extends State<TransformadoresxzonaMembersScreen> {
-  List<Tranformadoresactuales> allData = [];
-  List<Tranformadoresactuales> filteredData = [];
-
-  String? activeFilterType;
-  String? activeFilterValue;
-
-  int currentPage = 0;
-  final int pageSize = 6;
   final int itemsPerPage = 7;
-
-  String? selectedFilter;
-  String? selectedFilterValue;
+  int currentPage = 0;
 
   @override
   void initState() {
     super.initState();
-    // Datos de ejemplo
-    allData = List.generate(
-      25,
-      (index) => Tranformadoresactuales(
-        zona: index % 2 == 0 ? "Zacapoxtla" : "Oaxaca",
-        status: index % 3 == 0 ? "Activo" : "Inactivo",
-        cargas: (index * 7) % 100,
-        peso: (index * 5) % 100,
-        litros: (index * 3) % 100,
-        fases: [1, 2, 3][index % 3],
-        capacidad: [50, 100, 150, 200][index % 4],
-      ),
-    );
-    filteredData = List.from(allData);
-  }
-
-  List<TransformadoresXZona> applyFilters(List<TransformadoresXZona> data) {
-    if (selectedFilter == null || selectedFilterValue == null) return data;
-
-    return data.where((t) {
-      switch (selectedFilter) {
-        case 'Capacidad':
-          final cap = t.capacidad;
-          final range = selectedFilterValue!.split('-');
-          final min = double.parse(range[0]);
-          final max = double.parse(range[1]);
-          return cap >= min && cap <= max;
-
-        case 'Fases':
-          final fases = t.fase;
-          final range = selectedFilterValue!.split('-');
-          final min = int.parse(range[0]);
-          final max = int.parse(range[1]);
-          return fases >= min && fases <= max;
-
-        case 'Marca':
-          return t.marca == selectedFilterValue;
-
-        case 'Status':
-          return (t.status).toLowerCase() ==
-              selectedFilterValue!.toLowerCase();
-
-        case 'Peso':
-          final peso = double.tryParse(
-                  t.pesoKg.replaceAll('KGS', '').trim()) ??
-              0;
-          final range = selectedFilterValue!.split('-');
-          final min = double.parse(range[0]);
-          final max = double.parse(range[1]);
-          return peso >= min && peso <= max;
-
-        case 'Litros':
-          final litros = double.tryParse(
-                  t.litros.replaceAll('LTS', '').trim()) ??
-              0;
-          final range = selectedFilterValue!.split('-');
-          final min = double.parse(range[0]);
-          final max = double.parse(range[1]);
-          return litros >= min && litros <= max;
-
-        default:
-          return true;
-      }
-    }).toList();
+    // Cargar los transformadores al inicializar
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<TransformadoresxZonaProvider>();
+      provider.fetchTransformadores(widget.zona);
+    });
   }
 
   List<String> getDynamicOptions(
@@ -147,7 +58,7 @@ class _TransformadoresxzonaMembersScreenState
       case 'Peso':
         final pesos = data
             .map((t) =>
-                double.tryParse(t.pesoKg.replaceAll('KGS', '').trim()) ??
+                double.tryParse(t.peso_placa_de_datos.replaceAll('KGS', '').trim()) ??
                 0)
             .toList();
         final min = pesos.reduce((a, b) => a < b ? a : b);
@@ -158,13 +69,13 @@ class _TransformadoresxzonaMembersScreenState
           return '${start.toInt()}-${end.toInt()}';
         });
 
-      case 'Litros':
-        final litros = data
+      case 'aceite':
+        final aceite = data
             .map((t) => double.tryParse(
-                t.litros.replaceAll('LTS', '').trim())!)
+                t.aceite.replaceAll('LTS', '').trim())!)
             .toList();
-        final min = litros.reduce((a, b) => a < b ? a : b);
-        final max = litros.reduce((a, b) => a > b ? a : b);
+        final min = aceite.reduce((a, b) => a < b ? a : b);
+        final max = aceite.reduce((a, b) => a > b ? a : b);
         return List.generate(((max - min) ~/ 10 + 1), (i) {
           final start = min + (i * 10);
           final end = start + 10;
@@ -185,7 +96,7 @@ class _TransformadoresxzonaMembersScreenState
     final selected = await showMenu<String>(
       context: context,
       position: RelativeRect.fromLTRB(
-          overlay.size.width, kToolbarHeight, 0, 0), // esquina superior derecha
+          overlay.size.width, kToolbarHeight, 0, 0),
       items: options
           .map((opt) => PopupMenuItem<String>(
                 value: opt,
@@ -195,75 +106,16 @@ class _TransformadoresxzonaMembersScreenState
     );
 
     if (selected != null) {
+      final provider = context.read<TransformadoresxZonaProvider>();
+      provider.applyFilter(filter, selected);
       setState(() {
-        selectedFilter = filter;
-        selectedFilterValue = selected;
+        currentPage = 0; // Resetear a la primera página al aplicar filtro
       });
-    }
-  }
-
-  void applyFilter(String filterType, String value) {
-    setState(() {
-      activeFilterType = filterType;
-      activeFilterValue = value;
-
-      if (filterType == "cargas" || filterType == "peso" || filterType == "litros") {
-        final range = value.split("-");
-        final min = int.parse(range[0]);
-        final max = int.parse(range[1]);
-        filteredData = allData.where((e) {
-          final val = filterType == "cargas"
-              ? e.cargas
-              : filterType == "peso"
-                  ? e.peso
-                  : e.litros;
-          return val >= min && val <= max;
-        }).toList();
-      } else if (filterType == "fases") {
-        filteredData = allData.where((e) => e.fases.toString() == value).toList();
-      } else if (filterType == "capacidad") {
-        filteredData = allData.where((e) => e.capacidad.toString() == value).toList();
-      } else {
-        filteredData = List.from(allData);
-      }
-      currentPage = 0;
-    });
-  }
-
-  void clearFilter() {
-    setState(() {
-      activeFilterType = null;
-      activeFilterValue = null;
-      filteredData = List.from(allData);
-      currentPage = 0;
-    });
-  }
-
-  List<Tranformadoresactuales> get paginatedData {
-    final start = currentPage * pageSize;
-    final end = start + pageSize;
-    return filteredData.sublist(start, end > filteredData.length ? filteredData.length : end);
-  }
-
-  void _showSubFilterMenu(BuildContext context, String filterType, List<String> options) async {
-    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
-    final result = await showMenu<String>(
-      context: context,
-      position: RelativeRect.fromRect(
-        Offset(50, 80) & const Size(40, 40), // Posición del popup
-        Offset.zero & overlay.size,
-      ),
-      items: options.map((e) => PopupMenuItem(value: e, child: Text(e))).toList(),
-    );
-    if (result != null) {
-      applyFilter(filterType, result);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final totalPages = (filteredData.length / pageSize).ceil();
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF2A1AFF),
@@ -274,10 +126,9 @@ class _TransformadoresxzonaMembersScreenState
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
         actions: [
-          StreamBuilder<List<TransformadoresXZona>>(
-            stream: transformadoresxzonaStream(),
-            builder: (context, snapshot) {
-              final data = (snapshot.data ?? [])
+          Consumer<TransformadoresxZonaProvider>(
+            builder: (context, provider, child) {
+              final data = provider.transformadoresFiltrados
                   .where((t) => t.zona == widget.zona)
                   .toList();
 
@@ -285,9 +136,8 @@ class _TransformadoresxzonaMembersScreenState
                 icon: const Icon(Icons.filter_alt),
                 onSelected: (value) {
                   if (value == "clear") {
+                    provider.clearFilters();
                     setState(() {
-                      selectedFilter = null;
-                      selectedFilterValue = null;
                       currentPage = 0;
                     });
                   } else if (value != null) {
@@ -300,7 +150,7 @@ class _TransformadoresxzonaMembersScreenState
                   const PopupMenuItem(value: 'Marca', child: Text('Marca')),
                   const PopupMenuItem(value: 'Status', child: Text('Status')),
                   const PopupMenuItem(value: 'Peso', child: Text('Peso')),
-                  const PopupMenuItem(value: 'Litros', child: Text('Litros')),
+                  const PopupMenuItem(value: 'aceite', child: Text('aceite')),
                   const PopupMenuDivider(),
                   const PopupMenuItem(value: 'clear', child: Text('Quitar filtro')),
                 ],
@@ -309,42 +159,61 @@ class _TransformadoresxzonaMembersScreenState
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 100),
-            child: StreamBuilder<List<TransformadoresXZona>>(
-              stream: transformadoresxzonaStream(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                }
+      body: Consumer<TransformadoresxZonaProvider>(
+        builder: (context, provider, child) {
+          if (provider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-                var transformadores = (snapshot.data ?? [])
-                    .where((t) => t.zona == widget.zona)
-                    .toList();
+          var transformadores = provider.transformadoresFiltrados
+              .where((t) => t.zona == widget.zona)
+              .toList();
 
-                // aplicar filtros
-                transformadores = applyFilters(transformadores);
+          if (transformadores.isEmpty) {
+            return const Center(
+                child: Text('No hay transformadores registrados.'));
+          }
 
-                if (transformadores.isEmpty) {
-                  return const Center(
-                      child: Text('No hay transformadores registrados.'));
-                }
+          // Paginación
+          final totalPages = (transformadores.length / itemsPerPage).ceil();
+          final start = currentPage * itemsPerPage;
+          final end = (start + itemsPerPage).clamp(0, transformadores.length);
+          final pageItems = transformadores.sublist(start, end);
 
-                // paginación
-                final totalPages =
-                    (transformadores.length / itemsPerPage).ceil();
-                final start = currentPage * itemsPerPage;
-                final end =
-                    (start + itemsPerPage).clamp(0, transformadores.length);
-                final pageItems = transformadores.sublist(start, end);
-
-                return Column(
+          return Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 100),
+                child: Column(
                   children: [
+                    // Mostrar filtro activo si existe
+                    if (provider.selectedFilter != null && provider.selectedValue != null)
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.blue[50],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Filtro: ${provider.selectedFilter} = ${provider.selectedValue}',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close, size: 16),
+                              onPressed: () {
+                                provider.clearFilters();
+                                setState(() {
+                                  currentPage = 0;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
                     Expanded(
                       child: ListView.builder(
                         itemCount: pageItems.length,
@@ -352,11 +221,6 @@ class _TransformadoresxzonaMembersScreenState
                           final t = pageItems[index];
                           return InkWell(
                             onTap: () {
-                              // Debug: imprimir datos antes de navegar
-                              try {
-                                // ignore: avoid_print
-                                print('NAVIGATE Transformadoresxzona -> ${t.toJson()}');
-                              } catch (_) {}
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -375,15 +239,15 @@ class _TransformadoresxzonaMembersScreenState
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    t.numeroDeSerie,
+                                    t.serie,
                                     style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 16),
                                   ),
                                   Text(
-                                    selectedFilterValue != null
-                                        ? "$selectedFilter: $selectedFilterValue"
-                                        : "Status: ${t.status }",
+                                    provider.selectedFilter != null
+                                        ? "${provider.selectedFilter}: ${provider.selectedValue}"
+                                        : "Status: ${t.status}",
                                     style: const TextStyle(
                                         color: Colors.black54, fontSize: 14),
                                   ),
@@ -414,37 +278,37 @@ class _TransformadoresxzonaMembersScreenState
                         ],
                       ),
                   ],
-                );
-              },
-            ),
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 32.0),
-              child: SizedBox(
-                width: 180,
-                height: 48,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 32.0),
+                  child: SizedBox(
+                    width: 180,
+                    height: 48,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: () {
+                        // Aquí va la lógica para exportar a xlsx
+                      },
+                      child: const Text(
+                        'Exportar a xlsx',
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
                     ),
-                  ),
-                  onPressed: () {
-                    // Aquí va la lógica para exportar a xlsx
-                  },
-                  child: const Text(
-                    'Exportar a xlsx',
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF2196F3),

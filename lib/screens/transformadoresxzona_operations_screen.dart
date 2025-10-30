@@ -5,6 +5,8 @@ import 'package:inventario_proyecto/models/transformadoresxzona.dart';
 import 'package:inventario_proyecto/services/transformadoresxzona_service.dart';
 import 'package:inventario_proyecto/screens/transformadoresxzona_update.dart';
 import 'package:inventario_proyecto/widgets/motivo_dialog.dart';
+import 'package:provider/provider.dart';
+import '../providers/transformadoresxzona_provider.dart';
 
 class TrasnformadoresxzonaOperationsScreen extends StatelessWidget {
   final TransformadoresXZona transformador;
@@ -38,6 +40,7 @@ class TrasnformadoresxzonaOperationsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fechaMov = _formatDateNullable(transformador.fechaMovimiento);
+    final provider = Provider.of<TransformadoresxZonaProvider>(context, listen: false);
 
     return Scaffold(
       appBar: AppBar(
@@ -58,13 +61,13 @@ class TrasnformadoresxzonaOperationsScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (transformador.zona.isNotEmpty) Text('Zona: ${transformador.zona}'),
-            if (transformador.numEconomico != 0) Text('Número económico: ${transformador.numEconomico}'),
+            if (transformador.economico != 0) Text('Económico: ${transformador.economico}'),
             if (transformador.marca.isNotEmpty) Text('Marca: ${transformador.marca}'),
-            if (transformador.capacidad != 0) Text('Capacidad: ${transformador.capacidad}'),
-            if (transformador.fase != 0) Text('Fase: ${transformador.fase}'),
-            if (transformador.numeroDeSerie.isNotEmpty) Text('Número de serie: ${transformador.numeroDeSerie}'),
-            if (transformador.litros.isNotEmpty) Text('Litros de aceite: ${transformador.litros}'),
-            if (transformador.pesoKg.isNotEmpty) Text('Peso en kg: ${transformador.pesoKg}'),
+            if (transformador.capacidadKVA != 0) Text('capacidadKVA: ${transformador.capacidadKVA}'),
+            if (transformador.fases != 0) Text('Fase: ${transformador.fases}'),
+            if (transformador.serie.isNotEmpty) Text('Número de serie: ${transformador.serie}'),
+            if (transformador.aceite.isNotEmpty) Text('Litros de aceite: ${transformador.aceite}'),
+            if (transformador.peso_placa_de_datos.isNotEmpty) Text('Peso en kg: ${transformador.peso_placa_de_datos}'),
             if (transformador.relacion != null && transformador.relacion != 0) Text('Relación: ${transformador.relacion}'),
             if (transformador.status.isNotEmpty) Text('Status: ${transformador.status}'),
             if (fechaMov != null) Text('Fecha de movimiento: $fechaMov'),
@@ -101,7 +104,7 @@ class TrasnformadoresxzonaOperationsScreen extends StatelessWidget {
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                 onPressed: () async {
                   if (transformador.id != null) {
-                    await deleteTransformadorZona(transformador.id!);
+                    await provider.deleteTransformadorProvider(transformador.id!);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Transformador eliminado')),
                     );
@@ -124,7 +127,10 @@ class TrasnformadoresxzonaOperationsScreen extends StatelessWidget {
                     MaterialPageRoute(
                       builder: (_) => TransformadoresxzonaUpdateScreen(transformador: transformador),
                     ),
-                  );
+                  ).then((_) {
+                    // Actualizar datos después de regresar de la actualización
+                    provider.refreshData(transformador.id!);
+                  });
                 },
                 child: const Text('Actualizar', style: TextStyle(color: Colors.white)),
               ),
@@ -136,7 +142,9 @@ class TrasnformadoresxzonaOperationsScreen extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                onPressed: () {},
+                onPressed: () {
+                  exportTransformadoresxzonaToExcel(context);
+                },
                 child: const Text('Exportar a xlsx', style: TextStyle(color: Colors.white)),
               ),
             ),
@@ -151,12 +159,18 @@ class TrasnformadoresxzonaOperationsScreen extends StatelessWidget {
                   if (transformador.id == null) return;
                   final motivo = await mostrarMotivoDialog(context);
                   if (motivo != null && motivo.isNotEmpty) {
-                    await enviarAMantenimientoZona(transformador.id!, motivo);
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Enviado a mantenimiento')),
-                    );
+                    final result = await provider.enviarAMantenimientoProvider(transformador.id!, motivo);
+                    if (result == 200) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Enviado a mantenimiento')),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Error al enviar a mantenimiento')),
+                      );
                     }
+                  }
                 },
                 child: const Text('Enviar a mantenimiento', style: TextStyle(color: Colors.white)),
               ),
@@ -168,4 +182,3 @@ class TrasnformadoresxzonaOperationsScreen extends StatelessWidget {
     );
   }
 }
-

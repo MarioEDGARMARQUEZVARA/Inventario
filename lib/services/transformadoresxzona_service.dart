@@ -24,13 +24,13 @@ Future<List<TransformadoresXZona>> getTransformadoresxZona() async {
       return TransformadoresXZona(
         id: doc.id,
         zona: '',
-        numEconomico: 0,
+        economico: 0,
         marca: '',
-        capacidad: 0,
-        fase: 0,
-        numeroDeSerie: '',
-        litros: '',
-        pesoKg: '',
+        capacidadKVA: 0,
+        fases: 0,
+        serie: '',
+        aceite: '',
+        peso_placa_de_datos: '',
         relacion: 0,
         status: '',
         fechaMovimiento: null,
@@ -117,13 +117,13 @@ Stream<List<TransformadoresXZona>> transformadoresxzonaStream() {
           return TransformadoresXZona(
             id: doc.id,
             zona: '',
-            numEconomico: 0,
+            economico: 0,
             marca: '',
-            capacidad: 0,
-            fase: 0,
-            numeroDeSerie: '',
-            litros: '',
-            pesoKg: '',
+            capacidadKVA: 0,
+            fases: 0,
+            serie: '',
+            aceite: '',
+            peso_placa_de_datos: '',
             relacion: 0,
             status: '',
             fechaMovimiento: null,
@@ -145,7 +145,7 @@ Future<void> exportTransformadoresxzonaToExcel(BuildContext context) async {
   var excel = Excel.createExcel();
   Sheet sheetObject = excel['Pagina 1'];
 
-  List<String> headers = ['Zona', 'Economico', 'Marca', 'Capacidad', 'Fase', 'Numero de Serie', 'Litros', 'Kilos', 'Relación', 'Status', 'Fecha de Movimiento', 'Reparado', 'Motivo'];
+  List<String> headers = ['Zona', 'Economico', 'Marca', 'capacidadKVA', 'Fase', 'Numero de Serie', 'aceite', 'Kilos', 'Relación', 'Status', 'Fecha de Movimiento', 'Reparado', 'Motivo'];
   for (int i = 0; i < headers.length; i++) {
     sheetObject
         .cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0))
@@ -157,13 +157,13 @@ Future<void> exportTransformadoresxzonaToExcel(BuildContext context) async {
   for (int i = 0; i < items.length; i++) {
     var item = items[i];
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: i + 1)).value = TextCellValue(item.zona?.toString() ?? '');
-    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: i + 1)).value = TextCellValue(item.numEconomico?.toString() ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: i + 1)).value = TextCellValue(item.economico?.toString() ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: i + 1)).value = TextCellValue(item.marca ?? '');
-    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: i + 1)).value = TextCellValue(item.capacidad.toString() ?? '');
-    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: i + 1)).value = TextCellValue(item.fase?.toString() ?? '');
-    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: i + 1)).value = TextCellValue(item.numeroDeSerie ?? '');
-    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 6, rowIndex: i + 1)).value = TextCellValue(item.litros ?? '');
-    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 7, rowIndex: i + 1)).value = TextCellValue(item.pesoKg ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: i + 1)).value = TextCellValue(item.capacidadKVA.toString() ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: i + 1)).value = TextCellValue(item.fases?.toString() ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: i + 1)).value = TextCellValue(item.serie ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 6, rowIndex: i + 1)).value = TextCellValue(item.aceite ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 7, rowIndex: i + 1)).value = TextCellValue(item.peso_placa_de_datos ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 8, rowIndex: i + 1)).value = TextCellValue(item.relacion?.toString() ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 9, rowIndex: i + 1)).value = TextCellValue(item.status ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 10, rowIndex: i + 1)).value = TextCellValue(item.fechaMovimiento.toString() ?? '');
