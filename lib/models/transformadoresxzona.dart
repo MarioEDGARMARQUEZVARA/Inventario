@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'motivo.dart';
 class RangoFecha {
   final DateTime inicio;
@@ -41,30 +41,30 @@ class RangoFecha {
 class TransformadoresXZona {
   String? id;
   String zona;
-  int numEconomico;
+  int economico;
   String marca;
-  double capacidad;
-  int fase;
-  String numeroDeSerie;
-  String litros;
-  String pesoKg;
+  double capacidadKVA;
+  int fases;
+  String serie;
+  String aceite;
+  String peso_placa_de_datos;
   int relacion;
   String status;
   DateTime? fechaMovimiento;
   bool reparado;
   String? motivo;
-  List<Motivo>? motivos; // Nuevo campo opcional
+  List<Motivo>? motivos; 
 
   TransformadoresXZona({
     this.id,
     required this.zona,
-    required this.numEconomico,
+    required this.economico,
     required this.marca,
-    required this.capacidad,
-    required this.fase,
-    required this.numeroDeSerie,
-    required this.litros,
-    required this.pesoKg,
+    required this.capacidadKVA,
+    required this.fases,
+    required this.serie,
+    required this.aceite,
+    required this.peso_placa_de_datos,
     required this.relacion,
     required this.status,
     required this.fechaMovimiento,
@@ -95,26 +95,26 @@ class TransformadoresXZona {
     }
     return TransformadoresXZona(
       zona: get(map, ['Zona', 'zona', 'ZONA'])?.toString() ?? '',
-      numEconomico: (() {
-        final v = get(map, ['Numero_economico', 'NumeroEconomico', 'numero_economico', 'economico']);
+      economico: (() {
+        final v = get(map, ['Economico', 'economico']);
         if (v is int) return v;
         return int.tryParse(v?.toString() ?? '0') ?? 0;
       })(),
       marca: get(map, ['Marca', 'marca'])?.toString() ?? '',
-      capacidad: (() {
-        final v = get(map, ['Capacidad', 'CapacidadKVA', 'capacidad']);
+      capacidadKVA: (() {
+        final v = get(map, ['CapacidadKVA', 'capacidadKVA']);
         if (v is double) return v;
         if (v is num) return v.toDouble();
         return double.tryParse(v?.toString() ?? '0') ?? 0;
       })(),
-      fase: (() {
-        final v = get(map, ['Fase', 'fase']);
+      fases: (() {
+        final v = get(map, ['fases', 'fases']);
         if (v is int) return v;
         return int.tryParse(v?.toString() ?? '0') ?? 0;
       })(),
-      numeroDeSerie: get(map, ['Numero_de_serie', 'NumeroDeSerie', 'serie'])?.toString() ?? '',
-      litros: get(map, ['Litros', 'litros'])?.toString() ?? '',
-      pesoKg: get(map, ['Peso_kg', 'PesoKg', 'peso_kg'])?.toString() ?? '',
+      serie: get(map, ['Numero_de_serie', 'serie', 'serie'])?.toString() ?? '',
+      aceite: get(map, ['aceite', 'aceite'])?.toString() ?? '',
+      peso_placa_de_datos: get(map, ['Peso_kg', 'peso_placa_de_datos', 'peso_kg'])?.toString() ?? '',
       relacion: (() {
         final v = get(map, ['Relacion', 'relacion']);
         if (v is int) return v;
@@ -137,13 +137,13 @@ class TransformadoresXZona {
   Map<String, dynamic> toJson() {
     final json = {
       'Zona': zona,
-      'Numero_economico': numEconomico,
+      'Economico': economico,
       'Marca': marca,
-      'Capacidad': capacidad,
-      'Fase': fase,
-      'Numero_de_serie': numeroDeSerie,
-      'Litros': litros,
-      'Peso_kg': pesoKg,
+      'CapacidadKVA': capacidadKVA,
+      'fases': fases,
+      'Numero_de_serie': serie,
+      'aceite': aceite,
+      'Peso_kg': peso_placa_de_datos,
       'Relacion': relacion,
       'Status': status,
       'Fecha_mov': fechaMovimiento,

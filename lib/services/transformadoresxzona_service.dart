@@ -1,6 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:inventario_proyecto/models/transformadoresxzona.dart';
-
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:excel/excel.dart';
+import 'package:permission_handler/permission_handler.dart';
 FirebaseFirestore db = FirebaseFirestore.instance;
 
 /// Obtener lista de transformadores por zona
@@ -20,13 +24,13 @@ Future<List<TransformadoresXZona>> getTransformadoresxZona() async {
       return TransformadoresXZona(
         id: doc.id,
         zona: '',
-        numEconomico: 0,
+        economico: 0,
         marca: '',
-        capacidad: 0,
-        fase: 0,
-        numeroDeSerie: '',
-        litros: '',
-        pesoKg: '',
+        capacidadKVA: 0,
+        fases: 0,
+        serie: '',
+        aceite: '',
+        peso_placa_de_datos: '',
         relacion: 0,
         status: '',
         fechaMovimiento: null,
@@ -113,13 +117,13 @@ Stream<List<TransformadoresXZona>> transformadoresxzonaStream() {
           return TransformadoresXZona(
             id: doc.id,
             zona: '',
-            numEconomico: 0,
+            economico: 0,
             marca: '',
-            capacidad: 0,
-            fase: 0,
-            numeroDeSerie: '',
-            litros: '',
-            pesoKg: '',
+            capacidadKVA: 0,
+            fases: 0,
+            serie: '',
+            aceite: '',
+            peso_placa_de_datos: '',
             relacion: 0,
             status: '',
             fechaMovimiento: null,
@@ -128,3 +132,61 @@ Stream<List<TransformadoresXZona>> transformadoresxzonaStream() {
         }
       }).toList());
 }
+Future<void> exportTransformadoresxzonaToExcel(BuildContext context) async {
+    var status = await Permission.manageExternalStorage.request();
+  if (!status.isGranted) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Permiso de almacenamiento denegado')),
+    );
+    openAppSettings(); 
+    return;
+  }
+  var excel = Excel.createExcel();
+  Sheet sheetObject = excel['Pagina 1'];
+
+  List<String> headers = ['Zona', 'Economico', 'Marca', 'capacidadKVA', 'Fase', 'Numero de Serie', 'aceite', 'Kilos', 'Relación', 'Status', 'Fecha de Movimiento', 'Reparado', 'Motivo'];
+  for (int i = 0; i < headers.length; i++) {
+    sheetObject
+        .cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0))
+        .value = TextCellValue(headers[i]);
+  }
+
+  var items = await getTransformadoresxZona();
+
+  for (int i = 0; i < items.length; i++) {
+    var item = items[i];
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: i + 1)).value = TextCellValue(item.zona?.toString() ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: i + 1)).value = TextCellValue(item.economico?.toString() ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: i + 1)).value = TextCellValue(item.marca ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: i + 1)).value = TextCellValue(item.capacidadKVA.toString() ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: i + 1)).value = TextCellValue(item.fases?.toString() ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: i + 1)).value = TextCellValue(item.serie ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 6, rowIndex: i + 1)).value = TextCellValue(item.aceite ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 7, rowIndex: i + 1)).value = TextCellValue(item.peso_placa_de_datos ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 8, rowIndex: i + 1)).value = TextCellValue(item.relacion?.toString() ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 9, rowIndex: i + 1)).value = TextCellValue(item.status ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 10, rowIndex: i + 1)).value = TextCellValue(item.fechaMovimiento.toString() ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 11, rowIndex: i + 1)).value = TextCellValue(item.reparado.toString() ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 12, rowIndex: i + 1)).value = TextCellValue(item.motivo ?? '');
+
+    
+
+  }
+
+  String formattedDate = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+  String filePath =
+      '/storage/emulated/0/Download/transformadoresxzona_$formattedDate.xlsx';
+
+  List<int>? fileBytes = excel.save();
+  if (fileBytes != null) {
+    File(filePath)
+      ..createSync(recursive: true)
+      ..writeAsBytesSync(fileBytes);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Archivo Excel guardado en: $filePath')),
+    );
+  }
+}
+

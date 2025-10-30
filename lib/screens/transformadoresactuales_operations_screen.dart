@@ -3,6 +3,8 @@ import 'package:inventario_proyecto/models/tranformadoresactuales.dart';
 import 'package:inventario_proyecto/screens/transformadoresactuales_update.dart';
 import 'package:inventario_proyecto/services/transformadores_service.dart';
 import 'package:inventario_proyecto/widgets/motivo_dialog.dart';
+import 'package:provider/provider.dart';
+import '../providers/transformadores2025_provider.dart';
 
 class TransformadoresActualesOperationsScreen extends StatelessWidget {
   final Tranformadoresactuales transformador;
@@ -14,6 +16,8 @@ class TransformadoresActualesOperationsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<Transformadores2025Provider>(context, listen: false);
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF2A1AFF),
@@ -75,17 +79,11 @@ class TransformadoresActualesOperationsScreen extends StatelessWidget {
                     );
                     return;
                   }
-                  int code = await deleteTransformadorActual(transformador.id!);
-                  if (code == 200) {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Transformador eliminado')),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Error al eliminar')),
-                    );
-                  }
+                  await provider.deleteTransformadorProvider(transformador.id!);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Transformador eliminado')),
+                  );
+                  Navigator.pop(context);
                 },
                 child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
               ),
@@ -103,7 +101,10 @@ class TransformadoresActualesOperationsScreen extends StatelessWidget {
                     MaterialPageRoute(
                       builder: (_) => TransformadoresActualesUpdateScreen(transformador: transformador),
                     ),
-                  );
+                  ).then((_) {
+                    // Actualizar datos después de regresar de la actualización
+                    provider.refreshData();
+                  });
                 },
                 child: const Text('Actualizar', style: TextStyle(color: Colors.white)),
               ),
@@ -115,7 +116,9 @@ class TransformadoresActualesOperationsScreen extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                onPressed: () {},
+                onPressed: () async {
+                  await exportTransformadoresToExcel(context);
+                },
                 child: const Text('Exportar a xlsx', style: TextStyle(color: Colors.white)),
               ),
             ),
@@ -131,8 +134,8 @@ class TransformadoresActualesOperationsScreen extends StatelessWidget {
 
                   final motivo = await mostrarMotivoDialog(context);
                   if (motivo != null && motivo.isNotEmpty) {
-                    int code = await enviarAMantenimiento(transformador.id!, motivo);
-                    if (code == 200) {
+                    final result = await provider.enviarAMantenimientoProvider(transformador.id!, motivo);
+                    if (result == 200) {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Enviado a mantenimiento')),
