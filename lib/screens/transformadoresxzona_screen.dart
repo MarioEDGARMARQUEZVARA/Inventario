@@ -9,11 +9,30 @@ class TransformadoresxzonaScreen extends StatefulWidget {
   const TransformadoresxzonaScreen({super.key});
 
   @override
-  State<TransformadoresxzonaScreen> createState() => _TransformadoresxzonaScreenState();
+  State<TransformadoresxzonaScreen> createState() =>
+      _TransformadoresxzonaScreenState();
 }
 
-class _TransformadoresxzonaScreenState extends State<TransformadoresxzonaScreen> {
-  final TransformadoresxzonaService _service = TransformadoresxzonaService();
+class _TransformadoresxzonaScreenState
+    extends State<TransformadoresxzonaScreen> {
+  int currentPage = 0;
+  int itemsPerPage = 6;
+  RangeValues? selectedRange; 
+
+  List<MapEntry<String, List<TransformadoresXZona>>> applyFilter(
+      Map<String, List<TransformadoresXZona>> zonas) {
+    final zonaEntries = zonas.entries.toList();
+
+    if (selectedRange == null) {
+      return zonaEntries;
+    }
+
+    return zonaEntries.where((entry) {
+      final cantidad = entry.value.length;
+      return cantidad >= selectedRange!.start &&
+          cantidad <= selectedRange!.end;
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,69 +46,111 @@ class _TransformadoresxzonaScreenState extends State<TransformadoresxzonaScreen>
         ),
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.filter_alt, color: Colors.white),
+            onSelected: (value) {
+              setState(() {
+                if (value == "clear") {
+                  selectedRange = null;
+                  currentPage = 0;
+                } else {
+                  final parts = value.split("-");
+                  selectedRange = RangeValues(
+                      double.parse(parts[0]), double.parse(parts[1]));
+                  currentPage = 0;
+                }
+              });
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: "0-10", child: Text("0 - 10")),
+              const PopupMenuItem(value: "11-20", child: Text("11 - 20")),
+              const PopupMenuItem(value: "21-30", child: Text("21 - 30")),
+              const PopupMenuItem(value: "31-40", child: Text("31 - 40")),
+              const PopupMenuItem(value: "41-50", child: Text("41 - 50")),
+              const PopupMenuItem(value: "51-60", child: Text("51 - 60")),
+              const PopupMenuItem(value: "61-70", child: Text("61 - 70")),
+              const PopupMenuItem(value: "71-80", child: Text("71 - 80")),
+              const PopupMenuItem(value: "81-90", child: Text("81 - 90")),
+              const PopupMenuItem(value: "91-100", child: Text("91 - 100")),
+              const PopupMenuDivider(),
+              const PopupMenuItem(value: "clear", child: Text("Quitar filtro")),
+            ],
+          )
+        ],
       ),
       body: Stack(
         children: [
-          // Tu lista y contenido principal
           Padding(
-            padding: const EdgeInsets.only(bottom: 100), // deja espacio para el botón
-            child: StreamBuilder<List<Map<String, dynamic>>>(
-              stream: _service.getTransformadoresxzonaStream(),
+            padding: const EdgeInsets.only(bottom: 140),
+            child: StreamBuilder<List<TransformadoresXZona>>(
+              stream: transformadoresxzonaStream(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
+                  return const Center(
+                      child: Text("Ocurrió un error al cargar los datos."));
                 }
                 final data = snapshot.data ?? [];
                 if (data.isEmpty) {
-                  return const Center(child: Text('No hay transformadores registrados.'));
+                  return const Center(
+                      child: Text('No hay transformadores registrados.'));
                 }
 
                 // Agrupar por zona
                 final Map<String, List<TransformadoresXZona>> zonas = {};
-                for (var item in data) {
-                  final t = TransformadoresXZona.fromMap(item);
+                for (var t in data) {
                   zonas.putIfAbsent(t.zona, () => []).add(t);
                 }
 
-                final zonaKeys = zonas.keys.toList();
+                // Filtrar según rango seleccionado
+                final zonaEntries = applyFilter(zonas);
+
+                if (zonaEntries.isEmpty) {
+                  return const Center(
+                      child: Text("No hay registros en este rango."));
+                }
+
+                // Paginación
+                final totalPages =
+                    (zonaEntries.length / itemsPerPage).ceil().clamp(1, 999);
+                final start = currentPage * itemsPerPage;
+                final end = (start + itemsPerPage) > zonaEntries.length
+                    ? zonaEntries.length
+                    : (start + itemsPerPage);
+                final pageItems = zonaEntries.sublist(start, end);
 
                 return ListView.builder(
-                  itemCount: zonaKeys.length,
+                  itemCount: pageItems.length,
                   itemBuilder: (context, index) {
-                    final zona = zonaKeys[index];
-                    final cantidad = zonas[zona]!.length;
-                    return InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => TransformadoresxzonaMembersScreen(
-                              zona: zona,
-                              transformadores: zonas[zona]!,
-                            ),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                        padding: const EdgeInsets.all(8),
-                        color: Colors.grey[300],
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              zona.toUpperCase(),
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                            ),
-                            Text(
-                              'Cantidad: $cantidad',
-                              style: const TextStyle(color: Colors.black54, fontSize: 14),
-                            ),
-                          ],
+                    final zona = pageItems[index].key;
+                    final cantidad = pageItems[index].value.length;
+
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                          vertical: 6, horizontal: 8),
+                      child: ListTile(
+                        title: Text(
+                          zona.toUpperCase(),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 16),
                         ),
+                        subtitle: Text(
+                          'Cantidad: $cantidad',
+                          style: const TextStyle(
+                              color: Colors.black54, fontSize: 14),
+                        ),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  TransformadoresxzonaMembersScreen(zona: zona),
+                            ),
+                          );
+                        },
                       ),
                     );
                   },
@@ -97,29 +158,87 @@ class _TransformadoresxzonaScreenState extends State<TransformadoresxzonaScreen>
               },
             ),
           ),
-          // Botón exportar centrado abajo
+          // Botón exportar + paginación debajo
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
               padding: const EdgeInsets.only(bottom: 32.0),
-              child: SizedBox(
-                width: 180,
-                height: 48,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 180,
+                    height: 48,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: () async {
+                        await exportTransformadoresxzonaToExcel(context);
+                      },
+                      child: const Text(
+                        'Exportar a xlsx',
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
-                  onPressed: () {
-                    // Aquí va la lógica para exportar a xlsx
-                  },
-                  child: const Text(
-                    'Exportar a xlsx',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  const SizedBox(height: 12),
+                  StreamBuilder<List<TransformadoresXZona>>(
+                    stream: transformadoresxzonaStream(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) return const SizedBox();
+                      final data = snapshot.data!;
+                      final zonas = <String, List<TransformadoresXZona>>{};
+                      for (var t in data) {
+                        zonas.putIfAbsent(t.zona, () => []).add(t);
+                      }
+                      final zonaEntries = applyFilter(zonas);
+                      final totalPages =
+                          (zonaEntries.length / itemsPerPage).ceil().clamp(1, 999);
+
+                      if (totalPages <= 1) return const SizedBox();
+
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton(
+                            onPressed: currentPage > 0
+                                ? () {
+                                    setState(() {
+                                      currentPage--;
+                                    });
+                                  }
+                                : null,
+                            child: const Text("Anterior"),
+                          ),
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Text(
+                              "Página ${currentPage + 1} de $totalPages",
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: currentPage < totalPages - 1
+                                ? () {
+                                    setState(() {
+                                      currentPage++;
+                                    });
+                                  }
+                                : null,
+                            child: const Text("Siguiente"),
+                          ),
+                        ],
+                      );
+                    },
                   ),
-                ),
+                ],
               ),
             ),
           ),

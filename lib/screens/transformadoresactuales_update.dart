@@ -1,54 +1,88 @@
 import 'package:flutter/material.dart';
-import 'package:inventario_proyecto/models/tranformadoresactuales.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:inventario_proyecto/services/transformadores_service.dart';
 import 'package:intl/intl.dart';
+import 'package:inventario_proyecto/models/tranformadoresactuales.dart';
+import 'package:inventario_proyecto/services/transformadores_service.dart';
 
-class TransformadoresActualesAddScreen extends StatefulWidget {
-  const TransformadoresActualesAddScreen({super.key});
+class TransformadoresActualesUpdateScreen extends StatefulWidget {
+  final Tranformadoresactuales transformador;
+
+  const TransformadoresActualesUpdateScreen({super.key, required this.transformador});
 
   @override
-  State<TransformadoresActualesAddScreen> createState() => _TransformadoresActualesAddScreenState();
+  State<TransformadoresActualesUpdateScreen> createState() => _TransformadoresActualesUpdateScreenState();
 }
 
-class _TransformadoresActualesAddScreenState extends State<TransformadoresActualesAddScreen> {
+class _TransformadoresActualesUpdateScreenState extends State<TransformadoresActualesUpdateScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  final areaController = TextEditingController();
-  DateTime fechaDeLlegada = DateTime.now();
-  final marcaController = TextEditingController();
-  final aceiteController = TextEditingController();
-  final economicoController = TextEditingController();
-  final capacidadKVAController = TextEditingController();
-  final fasesController = TextEditingController();
-  final serieController = TextEditingController();
-  final pesoPlacaController = TextEditingController();
-  DateTime fechaFabricacion = DateTime.now();
-  DateTime fechaPrueba = DateTime.now();
-  final valorPrueba1Controller = TextEditingController();
-  final valorPrueba2Controller = TextEditingController();
-  final valorPrueba3Controller = TextEditingController();
-  final resistenciaAislamientoController = TextEditingController();
-  final rigidezDielecricaController = TextEditingController();
-  final estadoController = TextEditingController();
-  DateTime fechaEntradaTaller = DateTime.now();
-  DateTime fechaSalidaTaller = DateTime.now();
-  DateTime fechaEntregaAlmacen = DateTime.now();
-  bool salidaMantenimiento = false;
+  late TextEditingController areaController;
+  late DateTime fechaDeLlegada;
+  late String? mesSeleccionado;
+  late TextEditingController marcaController;
+  late TextEditingController aceiteController;
+  late TextEditingController economicoController;
+  late TextEditingController capacidadKVAController;
+  late TextEditingController fasesController;
+  late TextEditingController serieController;
+  late TextEditingController pesoPlacaController;
+  late DateTime fechaFabricacion;
+  late DateTime fechaPrueba;
+  late TextEditingController valorPrueba1Controller;
+  late TextEditingController valorPrueba2Controller;
+  late TextEditingController valorPrueba3Controller;
+  late TextEditingController resistenciaAislamientoController;
+  late TextEditingController rigidezDielecricaController;
+  late TextEditingController estadoController;
+  late DateTime fechaEntradaTaller;
+  late DateTime fechaSalidaTaller;
+  late DateTime fechaEntregaAlmacen;
+  late bool salidaMantenimiento;
   DateTime? fechaSalidaMantenimiento;
-  final motivoController = TextEditingController();
-  final bajaController = TextEditingController();
-  final cargasController = TextEditingController();
-  final areaEntregaReparadoController = TextEditingController();
+  late TextEditingController motivoController;
+  late TextEditingController bajaController;
+  late TextEditingController areaEntregaReparadoController;
+  late TextEditingController cargasController;
 
   final List<String> meses = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
-  String? mesSeleccionado;
 
   String _formatDate(DateTime date) {
     return DateFormat('dd/MM/yyyy').format(date);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final t = widget.transformador;
+    areaController = TextEditingController(text: t.area);
+    fechaDeLlegada = t.fecha_de_llegada;
+    mesSeleccionado = t.mes;
+    marcaController = TextEditingController(text: t.marca);
+    aceiteController = TextEditingController(text: t.aceite.replaceAll(' LTS', ''));
+    economicoController = TextEditingController(text: t.economico);
+    capacidadKVAController = TextEditingController(text: t.capacidadKVA.toString());
+    fasesController = TextEditingController(text: t.fases.toString());
+    serieController = TextEditingController(text: t.serie);
+    pesoPlacaController = TextEditingController(text: t.peso_placa_de_datos.replaceAll(' KGS', ''));
+    fechaFabricacion = t.fecha_fabricacion;
+    fechaPrueba = t.fecha_prueba;
+    valorPrueba1Controller = TextEditingController(text: t.valor_prueba_1);
+    valorPrueba2Controller = TextEditingController(text: t.valor_prueba_2);
+    valorPrueba3Controller = TextEditingController(text: t.valor_prueba_3);
+    resistenciaAislamientoController = TextEditingController(text: t.resistencia_aislamiento_megaoms.toString());
+    rigidezDielecricaController = TextEditingController(text: t.rigidez_dielecrica_kv);
+    estadoController = TextEditingController(text: t.estado);
+    fechaEntradaTaller = t.fecha_de_entrada_al_taller;
+    fechaSalidaTaller = t.fecha_de_salida_del_taller;
+    fechaEntregaAlmacen = t.fecha_entrega_almacen;
+    salidaMantenimiento = t.salida_mantenimiento;
+    fechaSalidaMantenimiento = t.fecha_salida_mantenimiento;
+    motivoController = TextEditingController(text: t.motivo ?? '');
+    cargasController = TextEditingController(text: t.cargas.toString());
+    bajaController = TextEditingController(text: t.baja ?? '');
+    areaEntregaReparadoController = TextEditingController(text: t.area_fecha_de_entrega_transformador_reparado ?? '');
   }
 
   Future<void> _selectDate(BuildContext context, DateTime initialDate, Function(DateTime) onSelected) async {
@@ -61,77 +95,44 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
     if (picked != null) onSelected(picked);
   }
 
-  @override
-  void dispose() {
-    areaController.dispose();
-    marcaController.dispose();
-    aceiteController.dispose();
-    economicoController.dispose();
-    capacidadKVAController.dispose();
-    fasesController.dispose();
-    serieController.dispose();
-    pesoPlacaController.dispose();
-    valorPrueba1Controller.dispose();
-    valorPrueba2Controller.dispose();
-    valorPrueba3Controller.dispose();
-    resistenciaAislamientoController.dispose();
-    rigidezDielecricaController.dispose();
-    estadoController.dispose();
-    bajaController.dispose();
-    cargasController.dispose();
-    areaEntregaReparadoController.dispose();
-    super.dispose();
-  }
+  Future<void> _actualizarTransformador() async {
+    final t = widget.transformador;
+    t.area = areaController.text;
+    t.fecha_de_llegada = fechaDeLlegada;
+    t.mes = mesSeleccionado ?? '';
+    t.marca = marcaController.text;
+    t.aceite = '${aceiteController.text.trim()} LTS';
+    t.economico = economicoController.text;
+    t.capacidadKVA = double.tryParse(capacidadKVAController.text) ?? 0;
+    t.fases = int.tryParse(fasesController.text) ?? 0;
+    t.serie = serieController.text;
+    t.peso_placa_de_datos = '${pesoPlacaController.text.trim()} KGS';
+    t.fecha_fabricacion = fechaFabricacion;
+    t.fecha_prueba = fechaPrueba;
+    t.valor_prueba_1 = valorPrueba1Controller.text;
+    t.valor_prueba_2 = valorPrueba2Controller.text;
+    t.valor_prueba_3 = valorPrueba3Controller.text;
+    t.resistencia_aislamiento_megaoms = int.tryParse(resistenciaAislamientoController.text) ?? 0;
+    t.rigidez_dielecrica_kv = rigidezDielecricaController.text;
+    t.estado = estadoController.text;
+    t.fecha_de_entrada_al_taller = fechaEntradaTaller;
+    t.fecha_de_salida_del_taller = fechaSalidaTaller;
+    t.fecha_entrega_almacen = fechaEntregaAlmacen;
+    t.salida_mantenimiento = salidaMantenimiento;
+    t.fecha_salida_mantenimiento = salidaMantenimiento ? fechaSalidaMantenimiento : null;
+    t.motivo = salidaMantenimiento ? motivoController.text : null;
+    t.baja = bajaController.text;
+    t.cargas = int.tryParse(cargasController.text) ?? 0;
+    t.area_fecha_de_entrega_transformador_reparado = areaEntregaReparadoController.text;
 
-  Future<int> _getConsecutivo() async {
-    final snapshot = await FirebaseFirestore.instance.collection('transformadores2025').get();
-    return snapshot.docs.length + 1;
-  }
-
-  Future<void> _guardarTransformador() async {
-    final consecutivo = await _getConsecutivo();
-    final aceite = '${aceiteController.text.trim()} LTS';
-    final pesoPlaca = '${pesoPlacaController.text.trim()} KGS';
-
-    final transformador = Tranformadoresactuales(
-      area: areaController.text,
-      consecutivo: consecutivo,
-      fecha_de_llegada: fechaDeLlegada,
-      mes: mesSeleccionado ?? '',
-      marca: marcaController.text,
-      aceite: aceite,
-      economico: economicoController.text,
-      capacidadKVA: double.tryParse(capacidadKVAController.text) ?? 0,
-      fases: int.tryParse(fasesController.text) ?? 0,
-      serie: serieController.text,
-      peso_placa_de_datos: pesoPlaca,
-      fecha_fabricacion: fechaFabricacion,
-      fecha_prueba: fechaPrueba,
-      valor_prueba_1: valorPrueba1Controller.text,
-      valor_prueba_2: valorPrueba2Controller.text,
-      valor_prueba_3: valorPrueba3Controller.text,
-      resistencia_aislamiento_megaoms: int.tryParse(resistenciaAislamientoController.text) ?? 0,
-      rigidez_dielecrica_kv: rigidezDielecricaController.text,
-      estado: estadoController.text,
-      fecha_de_entrada_al_taller: fechaEntradaTaller,
-      fecha_de_salida_del_taller: fechaSalidaTaller,
-      fecha_entrega_almacen: fechaEntregaAlmacen,
-      salida_mantenimiento: salidaMantenimiento,
-      fecha_salida_mantenimiento: salidaMantenimiento ? fechaSalidaMantenimiento : null,
-      baja: bajaController.text,
-      cargas: int.tryParse(cargasController.text) ?? 0,
-      area_fecha_de_entrega_transformador_reparado: areaEntregaReparadoController.text,
-      motivo: salidaMantenimiento ? motivoController.text : null,
-    );
-
-    await addTransformador(transformador);
+    await updateTransformador(t);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Agregar Transformador Actual'),
+        title: const Text('Editar Transformador Actual'),
         backgroundColor: Colors.blue[700],
         foregroundColor: Colors.white,
       ),
@@ -152,6 +153,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
+
                 InkWell(
                   onTap: () => _selectDate(context, fechaDeLlegada, (d) => setState(() => fechaDeLlegada = d)),
                   child: InputDecorator(
@@ -169,26 +171,18 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                   ),
                 ),
                 const SizedBox(height: 16),
+
                 DropdownButtonFormField<String>(
                   value: mesSeleccionado,
+                  items: meses.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                  onChanged: (v) => setState(() => mesSeleccionado = v),
                   decoration: const InputDecoration(
                     labelText: 'Mes',
                     border: OutlineInputBorder(),
                   ),
-                  items: meses.map((mes) {
-                    return DropdownMenuItem(
-                      value: mes,
-                      child: Text(mes),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      mesSeleccionado = value;
-                    });
-                  },
-                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: marcaController,
                   decoration: const InputDecoration(
@@ -198,16 +192,17 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: aceiteController,
                   decoration: const InputDecoration(
                     labelText: 'Aceite (LTS)',
                     border: OutlineInputBorder(),
                   ),
-                  keyboardType: TextInputType.number,
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: economicoController,
                   decoration: const InputDecoration(
@@ -217,26 +212,27 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: capacidadKVAController,
                   decoration: const InputDecoration(
                     labelText: 'Capacidad KVA',
                     border: OutlineInputBorder(),
                   ),
-                  keyboardType: TextInputType.number,
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: fasesController,
                   decoration: const InputDecoration(
                     labelText: 'Fases',
                     border: OutlineInputBorder(),
                   ),
-                  keyboardType: TextInputType.number,
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: serieController,
                   decoration: const InputDecoration(
@@ -246,16 +242,17 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: pesoPlacaController,
                   decoration: const InputDecoration(
                     labelText: 'Peso placa de datos (KGS)',
                     border: OutlineInputBorder(),
                   ),
-                  keyboardType: TextInputType.number,
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
+
                 InkWell(
                   onTap: () => _selectDate(context, fechaFabricacion, (d) => setState(() => fechaFabricacion = d)),
                   child: InputDecorator(
@@ -273,6 +270,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                   ),
                 ),
                 const SizedBox(height: 16),
+
                 InkWell(
                   onTap: () => _selectDate(context, fechaPrueba, (d) => setState(() => fechaPrueba = d)),
                   child: InputDecorator(
@@ -290,6 +288,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                   ),
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: valorPrueba1Controller,
                   decoration: const InputDecoration(
@@ -298,6 +297,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                   ),
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: valorPrueba2Controller,
                   decoration: const InputDecoration(
@@ -306,6 +306,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                   ),
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: valorPrueba3Controller,
                   decoration: const InputDecoration(
@@ -314,6 +315,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                   ),
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: resistenciaAislamientoController,
                   decoration: const InputDecoration(
@@ -322,6 +324,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                   ),
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: rigidezDielecricaController,
                   decoration: const InputDecoration(
@@ -330,6 +333,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                   ),
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: estadoController,
                   decoration: const InputDecoration(
@@ -339,6 +343,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
+
                 InkWell(
                   onTap: () => _selectDate(context, fechaEntradaTaller, (d) => setState(() => fechaEntradaTaller = d)),
                   child: InputDecorator(
@@ -356,6 +361,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                   ),
                 ),
                 const SizedBox(height: 16),
+
                 InkWell(
                   onTap: () => _selectDate(context, fechaSalidaTaller, (d) => setState(() => fechaSalidaTaller = d)),
                   child: InputDecorator(
@@ -373,6 +379,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                   ),
                 ),
                 const SizedBox(height: 16),
+
                 InkWell(
                   onTap: () => _selectDate(context, fechaEntregaAlmacen, (d) => setState(() => fechaEntregaAlmacen = d)),
                   child: InputDecorator(
@@ -390,6 +397,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                   ),
                 ),
                 const SizedBox(height: 16),
+
                 CheckboxListTile(
                   title: const Text('Salida mantenimiento'),
                   value: salidaMantenimiento,
@@ -397,6 +405,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                   controlAffinity: ListTileControlAffinity.leading,
                 ),
                 const SizedBox(height: 16),
+
                 if (salidaMantenimiento) ...[
                   InkWell(
                     onTap: () => _selectDate(
@@ -419,6 +428,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                     ),
                   ),
                   const SizedBox(height: 16),
+
                   TextFormField(
                     controller: motivoController,
                     decoration: const InputDecoration(
@@ -429,6 +439,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                   ),
                   const SizedBox(height: 16),
                 ],
+
                 TextFormField(
                   controller: bajaController,
                   decoration: const InputDecoration(
@@ -437,6 +448,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                   ),
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: cargasController,
                   decoration: const InputDecoration(
@@ -446,6 +458,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                   keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: areaEntregaReparadoController,
                   decoration: const InputDecoration(
@@ -454,12 +467,13 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                   ),
                 ),
                 const SizedBox(height: 24),
+
                 ElevatedButton(
                   onPressed: () async {
                     if (_formKey.currentState?.validate() ?? false) {
-                      await _guardarTransformador();
+                      await _actualizarTransformador();
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Transformador agregado correctamente')),
+                        const SnackBar(content: Text('Transformador actualizado correctamente')),
                       );
                       Navigator.pop(context);
                     }
@@ -469,7 +483,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  child: const Text('Guardar', style: TextStyle(fontSize: 16)),
+                  child: const Text('Guardar cambios', style: TextStyle(fontSize: 16)),
                 ),
               ],
             ),

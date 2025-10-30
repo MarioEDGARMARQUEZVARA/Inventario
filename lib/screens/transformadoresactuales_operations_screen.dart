@@ -1,7 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:inventario_proyecto/models/tranformadoresactuales.dart';
+import 'package:inventario_proyecto/screens/transformadoresactuales_update.dart';
+import 'package:inventario_proyecto/services/transformadores_service.dart';
 import 'package:inventario_proyecto/widgets/motivo_dialog.dart';
+import 'package:provider/provider.dart';
+import '../providers/transformadores2025_provider.dart';
 
 class TransformadoresActualesOperationsScreen extends StatelessWidget {
   final Tranformadoresactuales transformador;
@@ -13,6 +16,8 @@ class TransformadoresActualesOperationsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<Transformadores2025Provider>(context, listen: false);
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF2A1AFF),
@@ -33,11 +38,13 @@ class TransformadoresActualesOperationsScreen extends StatelessWidget {
           children: [
             Text('Consecutivo: ${transformador.consecutivo}', style: const TextStyle(fontWeight: FontWeight.bold)),
             Text('Fecha de llegada: ${_formatDate(transformador.fecha_de_llegada)}'),
+            Text('Área: ${transformador.area}'),
+            Text('Marca: ${transformador.marca}'),
+            Text('Capacidad KVA: ${transformador.capacidadKVA}'),
+            Text('Fecha de llegada: ${_formatDate(transformador.fecha_de_llegada)}'),
             Text('Mes: ${transformador.mes}'),
             Text('Área y fecha de entrega de transformador reparado: ${transformador.area_fecha_de_entrega_transformador_reparado}'),
-            Text('Área: ${transformador.area}'),
             Text('Económico: ${transformador.economico}'),
-            Text('Marca: ${transformador.marca}'),
             Text('Capacidad KVA: ${transformador.capacidadKVA}'),
             Text('Fases: ${transformador.fases}'),
             Text('Serie: ${transformador.serie}'),
@@ -54,60 +61,90 @@ class TransformadoresActualesOperationsScreen extends StatelessWidget {
             Text('Fecha de entrada: ${_formatDate(transformador.fecha_de_entrada_al_taller)}'),
             Text('Fecha de salida: ${_formatDate(transformador.fecha_de_salida_del_taller)}'),
             Text('Fecha de entrega: ${_formatDate(transformador.fecha_entrega_almacen)}'),
-            Text('Salida a mantenimiento mayor: ${transformador.salida_mantenimiento}'),
-            Text('Fecha de salida a mantenimiento mayor: ${_formatDate(transformador.fecha_salida_mantenimiento)}'),
+            Text('Salida a mantenimiento mayor: ${transformador.salida_mantenimiento ? "Sí" : "No"}'),
+            Text('Fecha de salida a mantenimiento mayor: ${transformador.fecha_salida_mantenimiento != null ? _formatDate(transformador.fecha_salida_mantenimiento!) : "N/A"}'),
             Text('Baja: ${transformador.baja}'),
             Text('Cargas: ${transformador.cargas}'),
             const SizedBox(height: 24),
+
+            // Eliminar
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                onPressed: () {},
+                onPressed: () async {
+                  if (transformador.id == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Error: El ID del transformador es nulo')),
+                    );
+                    return;
+                  }
+                  await provider.deleteTransformadorProvider(transformador.id!);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Transformador eliminado')),
+                  );
+                  Navigator.pop(context);
+                },
                 child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
               ),
             ),
             const SizedBox(height: 12),
+
+            // Actualizar
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF2A1AFF)),
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TransformadoresActualesUpdateScreen(transformador: transformador),
+                    ),
+                  ).then((_) {
+                    // Actualizar datos después de regresar de la actualización
+                    provider.refreshData();
+                  });
+                },
                 child: const Text('Actualizar', style: TextStyle(color: Colors.white)),
               ),
             ),
             const SizedBox(height: 12),
+
+            // Exportar
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                onPressed: () {},
+                onPressed: () async {
+                  await exportTransformadoresToExcel(context);
+                },
                 child: const Text('Exportar a xlsx', style: TextStyle(color: Colors.white)),
               ),
             ),
             const SizedBox(height: 12),
+
+            // Enviar a mantenimiento
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.cyan),
                 onPressed: () async {
+                  if (transformador.id == null) return;
+
                   final motivo = await mostrarMotivoDialog(context);
                   if (motivo != null && motivo.isNotEmpty) {
-                 
-                    await (transformador.id!, motivo);
-                  
-                    await FirebaseFirestore.instance
-                      .collection('transformadores2025')
-                      .doc(transformador.id)
-                      .update({
-                        'estado': 'Reparado',
-                        'salida_mantenimiento': 'Sí',
-                        'fecha_salida_mantenimiento': DateTime.now().toString(),
-                      });
-                  
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Enviado a mantenimiento')),
-                    );
+                    final result = await provider.enviarAMantenimientoProvider(transformador.id!, motivo);
+                    if (result == 200) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Enviado a mantenimiento')),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Error al enviar a mantenimiento')),
+                      );
+                    }
                   }
                 },
                 child: const Text('Enviar a mantenimiento', style: TextStyle(color: Colors.white)),
@@ -119,4 +156,3 @@ class TransformadoresActualesOperationsScreen extends StatelessWidget {
     );
   }
 }
-

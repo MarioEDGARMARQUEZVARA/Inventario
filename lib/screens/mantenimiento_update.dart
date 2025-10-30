@@ -1,43 +1,70 @@
 import 'package:flutter/material.dart';
-import 'package:inventario_proyecto/services/mantenimiento_service.dart';
 import 'package:inventario_proyecto/models/mantenimiento.dart';
+import 'package:inventario_proyecto/services/mantenimiento_service.dart';
 import 'package:intl/intl.dart';
 
-class MantenimientoAddScreen extends StatefulWidget {
-  const MantenimientoAddScreen({super.key});
+class MantenimientoUpdateScreen extends StatefulWidget {
+  final Mantenimiento mantenimiento;
+  const MantenimientoUpdateScreen({super.key, required this.mantenimiento});
 
   @override
-  State<MantenimientoAddScreen> createState() => _MantenimientoAddScreenState();
+  State<MantenimientoUpdateScreen> createState() => _MantenimientoUpdateScreenState();
 }
 
-class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
+class _MantenimientoUpdateScreenState extends State<MantenimientoUpdateScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  final areaController = TextEditingController();
-  final capacidadController = TextEditingController();
-  final economicoController = TextEditingController();
-  final estadoController = TextEditingController();
-  final fasesController = TextEditingController();
-  final pesoPlacaDeDatosController = TextEditingController();
-  final litrosController = TextEditingController();
-  final marcaController = TextEditingController();
-  final numeroMantenimientoController = TextEditingController();
-  final resistenciaAislamientoController = TextEditingController();
-  final rigidezDieletricaController = TextEditingController();
-  final rtFaseAController = TextEditingController();
-  final rtFaseBController = TextEditingController();
-  final rtFaseCController = TextEditingController();
-  final serieController = TextEditingController();
+  late TextEditingController areaController;
+  late TextEditingController capacidadController;
+  late TextEditingController economicoController;
+  late TextEditingController estadoController;
+  late TextEditingController fasesController;
+  late TextEditingController pesoPlacaDeDatosController;
+  late TextEditingController litrosController;
+  late TextEditingController marcaController;
+  late TextEditingController numeroMantenimientoController;
+  late TextEditingController resistenciaAislamientoController;
+  late TextEditingController rigidezDieletricaController;
+  late TextEditingController rtFaseAController;
+  late TextEditingController rtFaseBController;
+  late TextEditingController rtFaseCController;
+  late TextEditingController serieController;
+  late TextEditingController motivoController;
 
-  DateTime fechaAlta = DateTime.now();
-  DateTime fechaSalida = DateTime.now();
-  DateTime fechaFabricacion = DateTime.now();
-  DateTime fechaLlegada = DateTime.now();
-  DateTime fechaPruebaInicio = DateTime.now();
-  DateTime fechaPruebaFin = DateTime.now();
+  late DateTime fechaLlegada;
+  late DateTime fechaAlta;
+  late DateTime fechaSalida;
+  late DateTime fechaFabricacion;
+  late DateTime fechaPruebaInicio;
+  late DateTime fechaPruebaFin;
 
-  String _formatDate(DateTime date) {
-    return DateFormat('dd/MM/yyyy').format(date);
+  @override
+  void initState() {
+    super.initState();
+    final m = widget.mantenimiento;
+    areaController = TextEditingController(text: m.area);
+    capacidadController = TextEditingController(text: m.capacidadKVA.toString());
+    economicoController = TextEditingController(text: m.economico);
+    estadoController = TextEditingController(text: m.estado);
+    fasesController = TextEditingController(text: m.fases.toString());
+    pesoPlacaDeDatosController = TextEditingController(text: m.peso_placa_de_datos.replaceAll(' KGS', ''));
+    litrosController = TextEditingController(text: m.aceite.replaceAll(' LTS', ''));
+    marcaController = TextEditingController(text: m.marca);
+    numeroMantenimientoController = TextEditingController(text: m.numero_mantenimiento.toString());
+    resistenciaAislamientoController = TextEditingController(text: m.resistencia_aislamiento_megaoms.toString());
+    rigidezDieletricaController = TextEditingController(text: m.rigidez_dielecrica_kv);
+    rtFaseAController = TextEditingController(text: m.rt_fase_a?.toString() ?? '');
+    rtFaseBController = TextEditingController(text: m.rt_fase_b?.toString() ?? '');
+    rtFaseCController = TextEditingController(text: m.rt_fase_c?.toString() ?? '');
+    serieController = TextEditingController(text: m.serie);
+    motivoController = TextEditingController(text: m.motivo ?? '');
+
+    fechaAlta = m.fecha_de_alta!;
+    fechaSalida = m.fecha_de_salida_del_taller!;
+    fechaFabricacion = m.fecha_fabricacion!;
+    fechaLlegada = m.fecha_de_entrada_al_taller!;
+    fechaPruebaInicio = m.fecha_prueba.inicio!;
+    fechaPruebaFin = m.fecha_prueba.fin!;
   }
 
   Future<void> _selectDate(BuildContext context, DateTime initialDate, Function(DateTime) onSelected) async {
@@ -48,6 +75,10 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
       lastDate: DateTime(2100),
     );
     if (picked != null) onSelected(picked);
+  }
+
+  String _formatDate(DateTime date) {
+    return DateFormat('dd/MM/yyyy').format(date);
   }
 
   @override
@@ -67,6 +98,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
     rtFaseBController.dispose();
     rtFaseCController.dispose();
     serieController.dispose();
+    motivoController.dispose();
     super.dispose();
   }
 
@@ -74,7 +106,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Agregar Mantenimiento'),
+        title: const Text('Actualizar Mantenimiento'),
         backgroundColor: Colors.blue[700],
         foregroundColor: Colors.white,
       ),
@@ -95,6 +127,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
+
                 InkWell(
                   onTap: () => _selectDate(context, fechaLlegada, (d) => setState(() => fechaLlegada = d)),
                   child: InputDecorator(
@@ -112,6 +145,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: areaController,
                   decoration: const InputDecoration(
@@ -121,6 +155,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: economicoController,
                   decoration: const InputDecoration(
@@ -130,6 +165,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: marcaController,
                   decoration: const InputDecoration(
@@ -139,6 +175,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: capacidadController,
                   decoration: const InputDecoration(
@@ -148,6 +185,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: fasesController,
                   decoration: const InputDecoration(
@@ -157,6 +195,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: serieController,
                   decoration: const InputDecoration(
@@ -166,6 +205,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: litrosController,
                   decoration: const InputDecoration(
@@ -175,6 +215,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: pesoPlacaDeDatosController,
                   decoration: const InputDecoration(
@@ -184,6 +225,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
+
                 InkWell(
                   onTap: () => _selectDate(context, fechaFabricacion, (d) => setState(() => fechaFabricacion = d)),
                   child: InputDecorator(
@@ -201,6 +243,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+
                 Row(
                   children: [
                     Expanded(
@@ -245,6 +288,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: rtFaseAController,
                   decoration: const InputDecoration(
@@ -253,6 +297,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: rtFaseBController,
                   decoration: const InputDecoration(
@@ -261,6 +306,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: rtFaseCController,
                   decoration: const InputDecoration(
@@ -269,6 +315,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: resistenciaAislamientoController,
                   decoration: const InputDecoration(
@@ -277,6 +324,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: rigidezDieletricaController,
                   decoration: const InputDecoration(
@@ -285,6 +333,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: estadoController,
                   decoration: const InputDecoration(
@@ -294,6 +343,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
+
                 InkWell(
                   onTap: () => _selectDate(context, fechaAlta, (d) => setState(() => fechaAlta = d)),
                   child: InputDecorator(
@@ -311,6 +361,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+
                 InkWell(
                   onTap: () => _selectDate(context, fechaSalida, (d) => setState(() => fechaSalida = d)),
                   child: InputDecorator(
@@ -327,13 +378,25 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 16),
+
+                TextFormField(
+                  controller: motivoController,
+                  decoration: const InputDecoration(
+                    labelText: 'Motivo',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 2,
+                ),
                 const SizedBox(height: 24),
+
                 ElevatedButton(
                   onPressed: () async {
                     if (_formKey.currentState?.validate() ?? false) {
-                      final pesoPlacaDeDatos = '${pesoPlacaDeDatosController.text.trim()} KGS';
+                      final kilos = '${pesoPlacaDeDatosController.text.trim()} KGS';
                       final litros = '${litrosController.text.trim()} LTS';
                       final mantenimiento = Mantenimiento(
+                        id: widget.mantenimiento.id,
                         area: areaController.text,
                         capacidadKVA: double.tryParse(capacidadController.text) ?? 0,
                         economico: economicoController.text,
@@ -344,7 +407,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                         fecha_fabricacion: fechaFabricacion,
                         fecha_de_entrada_al_taller: fechaLlegada,
                         fecha_prueba: RangoFecha(inicio: fechaPruebaInicio, fin: fechaPruebaFin),
-                        peso_placa_de_datos: pesoPlacaDeDatos,
+                        peso_placa_de_datos: kilos,
                         aceite: litros,
                         marca: marcaController.text,
                         numero_mantenimiento: int.tryParse(numeroMantenimientoController.text) ?? 0,
@@ -354,10 +417,11 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                         rt_fase_b: double.tryParse(rtFaseBController.text),
                         rt_fase_c: double.tryParse(rtFaseCController.text),
                         serie: serieController.text,
+                        motivo: motivoController.text.isNotEmpty ? motivoController.text : null,
                       );
-                      await addMantenimiento(mantenimiento);
+                      await updateMantenimiento(mantenimiento);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Mantenimiento agregado correctamente')),
+                        const SnackBar(content: Text('Mantenimiento actualizado correctamente')),
                       );
                       Navigator.pop(context);
                     }
@@ -367,7 +431,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  child: const Text('Guardar', style: TextStyle(fontSize: 16)),
+                  child: const Text('Guardar cambios', style: TextStyle(fontSize: 16)),
                 ),
               ],
             ),

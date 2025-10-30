@@ -1,11 +1,20 @@
-DateTime _parseFechaDMY(String? fecha) {
-  if (fecha == null || fecha.isEmpty) return DateTime(1900, 1, 1);
-  final partes = fecha.split('/');
-  if (partes.length != 3) throw FormatException('Formato de fecha inválido: $fecha');
-  final dia = int.tryParse(partes[0]) ?? 1;
-  final mes = int.tryParse(partes[1]) ?? 1;
-  final anio = int.tryParse(partes[2]) ?? 1900;
-  return DateTime(anio, mes, dia);
+import 'motivo.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+DateTime _parseFecha(dynamic fecha) {
+  if (fecha == null) return DateTime(1900, 1, 1);
+  if (fecha is Timestamp) return fecha.toDate();
+  if (fecha is String) {
+    final partes = fecha.split('/');
+    if (partes.length == 3) {
+      final dia = int.tryParse(partes[0]) ?? 1;
+      final mes = int.tryParse(partes[1]) ?? 1;
+      final anio = int.tryParse(partes[2]) ?? 1900;
+      return DateTime(anio, mes, dia);
+    }
+    return DateTime.tryParse(fecha) ?? DateTime(1900, 1, 1);
+  }
+  return DateTime(1900, 1, 1);
 }
 
 class Tranformadoresactuales {
@@ -32,12 +41,13 @@ class Tranformadoresactuales {
   DateTime fecha_de_entrada_al_taller;
   DateTime fecha_de_salida_del_taller;
   DateTime fecha_entrega_almacen;
-  String salida_mantenimiento;
-  DateTime fecha_salida_mantenimiento;
+  bool salida_mantenimiento;
+  DateTime? fecha_salida_mantenimiento;
   String baja;
   int cargas;
   String area_fecha_de_entrega_transformador_reparado;
-  String? motivo; // Nuevo campo opcional
+  String? motivo;
+  List<Motivo>? motivos; 
 
   Tranformadoresactuales({
     this.id,
@@ -64,53 +74,153 @@ class Tranformadoresactuales {
     required this.fecha_de_salida_del_taller,
     required this.fecha_entrega_almacen,
     required this.salida_mantenimiento,
-    required this.fecha_salida_mantenimiento,
+    this.fecha_salida_mantenimiento, // <-- Permite nulo
     required this.baja,
     required this.cargas,
     required this.area_fecha_de_entrega_transformador_reparado,
     this.motivo,
+    this.motivos,
   });
 
   factory Tranformadoresactuales.fromMap(Map<String, dynamic> map) {
-    return Tranformadoresactuales(
-      area: map['Area']?.toString() ?? '',
-      economico: map['Economico']?.toString() ?? '',
-      capacidadKVA: map['CapacidadKVA'] is double
-          ? map['CapacidadKVA']
-          : double.tryParse(map['Capacidad KVA']?.toString() ?? '0') ?? 0,
-      consecutivo: map['Consecutivo'] is int
-          ? map['Consecutivo']
-          : int.tryParse(map['Consecutivo']?.toString() ?? '0') ?? 0,
-      fecha_de_llegada: _parseFechaDMY(map['Fecha_de_llegada'] as String?),
-      fases: map['Fase'] is int
-          ? map['Fase']
-          : int.tryParse(map['Fase']?.toString() ?? '0') ?? 0,
-      serie: map['Serie']?.toString() ?? '',
-      mes: map['Mes']?.toString() ?? '',
-      marca: map['Marca']?.toString() ?? '',
-      aceite: map['Aceite']?.toString() ?? '',
-      peso_placa_de_datos: map['Peso_placa_de_datos']?.toString() ?? '',
-      fecha_fabricacion: _parseFechaDMY(map['Fecha_fabricacion'] as String?),
-      fecha_prueba: _parseFechaDMY(map['Fecha_prueba'] as String?),
-      valor_prueba_1: map['Valor_prueba_1']?.toString() ?? '',
-      valor_prueba_2: map['Valor_prueba_2']?.toString() ?? '',
-      valor_prueba_3: map['Valor_prueba_3']?.toString() ?? '',
-      resistencia_aislamiento_megaoms: map['Resistencia_aislamiento_megaoms'] is int
-          ? map['Resistencia_aislamiento_megaoms']
-          : int.tryParse(map['Resistencia_aislamiento_megaoms']?.toString() ?? '0') ?? 0,
-      rigidez_dielecrica_kv: map['Rigidez_dielecrica_kv']?.toString() ?? '',
-      estado: map['Estado']?.toString() ?? '',
-      fecha_de_entrada_al_taller: _parseFechaDMY(map['Fecha_de_entrada_al_taller'] as String?),
-      fecha_de_salida_del_taller: _parseFechaDMY(map['Fecha_de_salida_del_taller'] as String?),
-      fecha_entrega_almacen: _parseFechaDMY(map['Fecha_entrega_almacen'] as String?),
-      salida_mantenimiento: map['Salida_mantenimiento']?.toString() ?? '',
-      fecha_salida_mantenimiento: _parseFechaDMY(map['Fecha_salida_mantenimiento'] as String?),
-      baja: map['Baja']?.toString() ?? '',
-      cargas: map['Cargas'] is int
-          ? map['Cargas']
-          : int.tryParse(map['Cargas']?.toString() ?? '0') ?? 0,
-      area_fecha_de_entrega_transformador_reparado: map['Aerea_fecha_de_entrega_transformador_reparado']?.toString() ?? '',
-      motivo: map['Motivo'] as String?,
-    );
+    dynamic get(Map<String, dynamic> m, List<String> keys) {
+      for (var k in keys) {
+        if (m.containsKey(k) && m[k] != null) return m[k];
+      }
+      return null;
+    }
+
+    try {
+      return Tranformadoresactuales(
+        id: map['id'] as String?,
+        area: get(map, ['Area', 'area'])?.toString() ?? '',
+        economico: get(map, ['Economico', 'economico', 'Economico'])?.toString() ?? '',
+        capacidadKVA: (() {
+          final v = get(map, ['CapacidadKVA', 'Capacidad KVA', 'capacidad']);
+          if (v is double) return v;
+          if (v is num) return v.toDouble();
+          return double.tryParse(v?.toString() ?? '0') ?? 0;
+        })(),
+        consecutivo: (() {
+          final v = get(map, ['Consecutivo', 'consecutivo']);
+          if (v is int) return v;
+          return int.tryParse(v?.toString() ?? '0') ?? 0;
+        })(),
+        fecha_de_llegada: _parseFecha(get(map, ['Fecha_de_llegada', 'fecha_de_llegada'])),
+        fases: (() {
+          final v = get(map, ['Fase', 'fases']);
+          if (v is int) return v;
+          return int.tryParse(v?.toString() ?? '0') ?? 0;
+        })(),
+        serie: get(map, ['Serie', 'serie'])?.toString() ?? '',
+        mes: get(map, ['Mes', 'mes'])?.toString() ?? '',
+        marca: get(map, ['Marca', 'marca'])?.toString() ?? '',
+        aceite: get(map, ['Aceite', 'aceite'])?.toString() ?? '',
+        peso_placa_de_datos: get(map, ['Peso_placa_de_datos', 'peso_placa_de_datos'])?.toString() ?? '',
+        fecha_fabricacion: _parseFecha(get(map, ['Fecha_fabricacion', 'fecha_fabricacion'])),
+        fecha_prueba: _parseFecha(get(map, ['Fecha_prueba', 'fecha_prueba'])),
+        valor_prueba_1: get(map, ['Valor_prueba_1', 'valor_prueba_1'])?.toString() ?? '',
+        valor_prueba_2: get(map, ['Valor_prueba_2', 'valor_prueba_2'])?.toString() ?? '',
+        valor_prueba_3: get(map, ['Valor_prueba_3', 'valor_prueba_3'])?.toString() ?? '',
+        resistencia_aislamiento_megaoms: (() {
+          final v = get(map, ['Resistencia_aislamiento_megaoms', 'resistencia_aislamiento_megaoms']);
+          if (v is int) return v;
+          return int.tryParse(v?.toString() ?? '0') ?? 0;
+        })(),
+        rigidez_dielecrica_kv: get(map, ['Rigidez_dielecrica_kv', 'rigidez_dielecrica_kv'])?.toString() ?? '',
+        estado: get(map, ['Estado', 'estado'])?.toString() ?? '',
+        fecha_de_entrada_al_taller: _parseFecha(get(map, ['Fecha_de_entrada_al_taller', 'fecha_de_entrada_al_taller'])),
+        fecha_de_salida_del_taller: _parseFecha(get(map, ['Fecha_de_salida_del_taller', 'fecha_de_salida_del_taller'])),
+        fecha_entrega_almacen: _parseFecha(get(map, ['Fecha_entrega_almacen', 'fecha_entrega_almacen'])),
+        salida_mantenimiento: (() {
+          final v = get(map, ['Salida_mantenimiento', 'salida_mantenimiento']);
+          if (v is bool) return v;
+          return v?.toString() == 'true';
+        })(),
+        fecha_salida_mantenimiento: get(map, ['Fecha_salida_mantenimiento', 'fecha_salida_mantenimiento']) != null
+            ? _parseFecha(get(map, ['Fecha_salida_mantenimiento', 'fecha_salida_mantenimiento']))
+            : null,
+        baja: get(map, ['Baja', 'baja'])?.toString() ?? '',
+        cargas: (() {
+          final v = get(map, ['Cargas', 'cargas']);
+          if (v is int) return v;
+          return int.tryParse(v?.toString() ?? '0') ?? 0;
+        })(),
+        area_fecha_de_entrega_transformador_reparado: get(map, ['Aerea_fecha_de_entrega_transformador_reparado', 'area_fecha_de_entrega_transformador_reparado'])?.toString() ?? '',
+        motivo: get(map, ['Motivo', 'motivo']) as String?,
+        motivos: (get(map, ['Motivos', 'motivos']) as List?)
+            ?.map((m) => Motivo.fromMap(m as Map<String, dynamic>))
+            .toList(),
+      );
+    } catch (e) {
+      // If parsing fails, return a minimal object so app won't crash and log the issue
+      print('Tranformadoresactuales.fromMap parse error: $e -- map: $map');
+      return Tranformadoresactuales(
+        area: '',
+        consecutivo: 0,
+        fecha_de_llegada: DateTime(1900),
+        mes: '',
+        marca: '',
+        aceite: '',
+        economico: '',
+        capacidadKVA: 0,
+        fases: 0,
+        serie: '',
+        peso_placa_de_datos: '',
+        fecha_fabricacion: DateTime(1900),
+        fecha_prueba: DateTime(1900),
+        valor_prueba_1: '',
+        valor_prueba_2: '',
+        valor_prueba_3: '',
+        resistencia_aislamiento_megaoms: 0,
+        rigidez_dielecrica_kv: '',
+        estado: '',
+        fecha_de_entrada_al_taller: DateTime(1900),
+        fecha_de_salida_del_taller: DateTime(1900),
+        fecha_entrega_almacen: DateTime(1900),
+        salida_mantenimiento: false,
+        fecha_salida_mantenimiento: null,
+        baja: '',
+        cargas: 0,
+        area_fecha_de_entrega_transformador_reparado: '',
+      );
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    final json = {
+      'Area': area,
+      'Economico': economico,
+      'CapacidadKVA': capacidadKVA,
+      'Consecutivo': consecutivo,
+      'Fecha_de_llegada': fecha_de_llegada,
+      'Fase': fases,
+      'Serie': serie,
+      'Mes': mes,
+      'Marca': marca,
+      'Aceite': aceite,
+      'Peso_placa_de_datos': peso_placa_de_datos,
+      'Fecha_fabricacion': fecha_fabricacion,
+      'Fecha_prueba': fecha_prueba,
+      'Valor_prueba_1': valor_prueba_1,
+      'Valor_prueba_2': valor_prueba_2,
+      'Valor_prueba_3': valor_prueba_3,
+      'Resistencia_aislamiento_megaoms': resistencia_aislamiento_megaoms,
+      'Rigidez_dielecrica_kv': rigidez_dielecrica_kv,
+      'Estado': estado,
+      'Fecha_de_entrada_al_taller': fecha_de_entrada_al_taller,
+      'Fecha_de_salida_del_taller': fecha_de_salida_del_taller,
+      'Fecha_entrega_almacen': fecha_entrega_almacen,
+      'Salida_mantenimiento': salida_mantenimiento,
+      'Fecha_salida_mantenimiento': fecha_salida_mantenimiento,
+      'Baja': baja,
+      'Cargas': cargas,
+      'Aerea_fecha_de_entrega_transformador_reparado': area_fecha_de_entrega_transformador_reparado,
+      'Motivo': motivo,
+    };
+    if (motivos != null) {
+      json['Motivos'] = motivos!.map((m) => m.toJson()).toList();
+    }
+    return json;
   }
 }
