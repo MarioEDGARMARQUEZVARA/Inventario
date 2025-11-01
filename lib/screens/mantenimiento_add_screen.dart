@@ -75,7 +75,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Agregar Mantenimiento'),
-        backgroundColor: Colors.blue[700],
+        backgroundColor: const Color(0xFF2A1AFF),
         foregroundColor: Colors.white,
       ),
       body: Padding(

@@ -346,7 +346,7 @@ class _Transformadores2025ScreenState
         },
       ),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 10.0), // Sube el FAB
+        padding: const EdgeInsets.only(bottom: 10.0),
         child: FloatingActionButton(
           backgroundColor: const Color(0xFF2196F3),
           onPressed: () async {

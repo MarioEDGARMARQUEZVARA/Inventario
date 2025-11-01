@@ -132,7 +132,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
     return Scaffold(
       appBar: AppBar(
         title: const Text('Agregar Transformador Actual'),
-        backgroundColor: Colors.blue[700],
+        backgroundColor: const Color(0xFF2A1AFF),
         foregroundColor: Colors.white,
       ),
       body: Padding(
@@ -465,7 +465,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[700],
+                    backgroundColor: const Color(0xFF2196F3),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),

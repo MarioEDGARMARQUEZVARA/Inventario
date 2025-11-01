@@ -77,7 +77,7 @@ class _TransformadoresxzonaAddScreenState extends State<TransformadoresxzonaAddS
     return Scaffold(
       appBar: AppBar(
         title: const Text('Agregar Transformador'),
-        backgroundColor: Colors.blue[700],
+        backgroundColor: const Color(0xFF2A1AFF),
         foregroundColor: Colors.white,
       ),
       body: Padding(
