@@ -44,7 +44,7 @@ class _TransformadoresxzonaUpdateScreenState extends State<TransformadoresxzonaU
     aceiteController = TextEditingController(text: t.aceite.replaceAll(' LTS', ''));
     peso_placa_de_datosController = TextEditingController(text: t.peso_placa_de_datos.replaceAll(' KGS', ''));
     relacionController = TextEditingController(text: t.relacion.toString());
-    statusController = TextEditingController(text: t.status);
+    statusController = TextEditingController(text: t.estado);
     fechaMovimiento = t.fechaMovimiento!;
   }
 
@@ -78,7 +78,7 @@ class _TransformadoresxzonaUpdateScreenState extends State<TransformadoresxzonaU
       aceite: aceite,
       peso_placa_de_datos: peso_placa_de_datos,
       relacion: int.tryParse(relacionController.text) ?? 0,
-      status: statusController.text,
+      estado: statusController.text,
       fechaMovimiento: fechaMovimiento,
       reparado: widget.transformador.reparado,
       motivo: widget.transformador.motivo,

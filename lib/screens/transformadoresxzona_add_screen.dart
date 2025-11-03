@@ -61,7 +61,7 @@ class _TransformadoresxzonaAddScreenState extends State<TransformadoresxzonaAddS
       aceite: aceite,
       peso_placa_de_datos: peso_placa_de_datos,
       relacion: int.tryParse(relacionController.text) ?? 0,
-      status: statusController.text,
+      estado: statusController.text,
       fechaMovimiento: fechaMovimiento,
       reparado: false,
     );

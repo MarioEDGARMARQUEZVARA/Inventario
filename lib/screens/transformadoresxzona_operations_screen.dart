@@ -69,7 +69,7 @@ class TrasnformadoresxzonaOperationsScreen extends StatelessWidget {
             if (transformador.aceite.isNotEmpty) Text('Litros de aceite: ${transformador.aceite}'),
             if (transformador.peso_placa_de_datos.isNotEmpty) Text('Peso en kg: ${transformador.peso_placa_de_datos}'),
             if (transformador.relacion != null && transformador.relacion != 0) Text('Relación: ${transformador.relacion}'),
-            if (transformador.status.isNotEmpty) Text('Status: ${transformador.status}'),
+            if (transformador.estado.isNotEmpty) Text('Status: ${transformador.estado}'),
             if (fechaMov != null) Text('Fecha de movimiento: $fechaMov'),
             Text('Reparado: ${transformador.reparado ? "Sí" : "No"}'),
             const SizedBox(height: 12),

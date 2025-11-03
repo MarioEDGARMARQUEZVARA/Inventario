@@ -32,7 +32,7 @@ Future<List<TransformadoresXZona>> getTransformadoresxZona() async {
         aceite: '',
         peso_placa_de_datos: '',
         relacion: 0,
-        status: '',
+        estado: '',
         fechaMovimiento: null,
         reparado: false,
       );
@@ -125,7 +125,7 @@ Stream<List<TransformadoresXZona>> transformadoresxzonaStream() {
             aceite: '',
             peso_placa_de_datos: '',
             relacion: 0,
-            status: '',
+            estado: '',
             fechaMovimiento: null,
             reparado: false,
           );
@@ -133,8 +133,8 @@ Stream<List<TransformadoresXZona>> transformadoresxzonaStream() {
       }).toList());
 }
 Future<void> exportTransformadoresxzonaToExcel(BuildContext context) async {
-    var status = await Permission.manageExternalStorage.request();
-  if (!status.isGranted) {
+    var estado = await Permission.manageExternalStorage.request();
+  if (!estado.isGranted) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Permiso de almacenamiento denegado')),
@@ -165,7 +165,7 @@ Future<void> exportTransformadoresxzonaToExcel(BuildContext context) async {
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 6, rowIndex: i + 1)).value = TextCellValue(item.aceite ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 7, rowIndex: i + 1)).value = TextCellValue(item.peso_placa_de_datos ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 8, rowIndex: i + 1)).value = TextCellValue(item.relacion?.toString() ?? '');
-    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 9, rowIndex: i + 1)).value = TextCellValue(item.status ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 9, rowIndex: i + 1)).value = TextCellValue(item.estado ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 10, rowIndex: i + 1)).value = TextCellValue(item.fechaMovimiento.toString() ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 11, rowIndex: i + 1)).value = TextCellValue(item.reparado.toString() ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 12, rowIndex: i + 1)).value = TextCellValue(item.motivo ?? '');

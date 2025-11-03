@@ -7,7 +7,6 @@ import 'package:inventario_proyecto/screens/mantenimiento_add_screen.dart';
 import 'package:inventario_proyecto/widgets/main_drawer.dart';
 import 'package:provider/provider.dart';
 
-
 class MantenimientoScreen extends StatefulWidget {
   const MantenimientoScreen({super.key});
 
@@ -203,6 +202,10 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
                     style:
                         const TextStyle(color: Colors.grey, fontSize: 14),
                   ),
+                  // AGREGAR ICONO DE PALOMITA SI ESTÁ REPARADO
+                  trailing: m.estado.toLowerCase() == "reparado" 
+                      ? const Icon(Icons.check_circle, color: Colors.green, size: 24)
+                      : null,
                   onTap: () {
                     Navigator.push(
                       context,

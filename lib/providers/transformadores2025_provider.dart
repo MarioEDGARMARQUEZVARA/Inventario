@@ -88,7 +88,10 @@ class Transformadores2025Provider extends ChangeNotifier {
     try {
       final result = await enviarAMantenimiento(id, motivo);
       if (result == 200) {
-        _transformadores.removeWhere((t) => t.id == id);
+        // Marcar como enviado a mantenimiento en lugar de eliminar
+        final transformador = _transformadores.firstWhere((t) => t.id == id);
+        transformador.enviadoMantenimiento = true;
+        transformador.fechaEnvioMantenimiento = DateTime.now();
         notifyListeners();
       }
       return result;
@@ -192,12 +195,6 @@ class Transformadores2025Provider extends ChangeNotifier {
   // 🔧 Utilidad: extraer número de string
   int _extraerNumero(String valor) {
     return int.tryParse(valor.replaceAll(RegExp(r'[^0-9]'), "")) ?? 0;
-  }
-
-  // 🔁 Mover transformador a mantenimiento (elimina de la lista actual)
-  void moveToMantenimiento(String id) {
-    _transformadores.removeWhere((t) => t.id == id);
-    notifyListeners();
   }
 
   // 🔄 Método para forzar actualización desde otras pantallas

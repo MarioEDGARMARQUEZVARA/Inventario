@@ -254,6 +254,10 @@ class _Transformadores2025ScreenState
                     style: const TextStyle(
                         color: Colors.grey, fontSize: 14),
                   ),
+                  // AGREGAR ICONO DE HERRAMIENTA AZUL SI FUE ENVIADO A MANTENIMIENTO
+                  trailing: t.enviadoMantenimiento 
+                      ? const Icon(Icons.build, color: Colors.blue, size: 24)
+                      : null,
                   onTap: () {
                     _navigateToOperations(t);
                   },

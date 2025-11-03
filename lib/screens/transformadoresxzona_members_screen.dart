@@ -3,6 +3,7 @@ import 'package:inventario_proyecto/models/transformadoresxzona.dart';
 import 'package:inventario_proyecto/screens/transformadoresxzona_operations_screen.dart';
 import 'package:inventario_proyecto/screens/transformadoresxzona_add_screen.dart';
 import 'package:inventario_proyecto/providers/transformadoresxzona_provider.dart';
+import 'package:inventario_proyecto/services/transformadoresxzona_service.dart';
 import 'package:provider/provider.dart';
 
 class TransformadoresxzonaMembersScreen extends StatefulWidget {
@@ -52,8 +53,8 @@ class _TransformadoresxzonaMembersScreenState
       case 'Marca':
         return data.map((t) => t.marca).toSet().toList();
 
-      case 'Status':
-        return data.map((t) => t.status).toSet().toList();
+      case 'Estado': // CAMBIADO: Status -> Estado
+        return data.map((t) => t.estado).toSet().toList();
 
       case 'Peso':
         final pesos = data
@@ -148,7 +149,7 @@ class _TransformadoresxzonaMembersScreenState
                   const PopupMenuItem(value: 'Capacidad', child: Text('Capacidad')),
                   const PopupMenuItem(value: 'Fases', child: Text('Fases')),
                   const PopupMenuItem(value: 'Marca', child: Text('Marca')),
-                  const PopupMenuItem(value: 'Status', child: Text('Status')),
+                  const PopupMenuItem(value: 'Estado', child: Text('Estado')), // CAMBIADO: Status -> Estado
                   const PopupMenuItem(value: 'Peso', child: Text('Peso')),
                   const PopupMenuItem(value: 'aceite', child: Text('aceite')),
                   const PopupMenuDivider(),
@@ -235,22 +236,34 @@ class _TransformadoresxzonaMembersScreenState
                                   vertical: 6, horizontal: 8),
                               padding: const EdgeInsets.all(8),
                               color: Colors.grey[300],
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              child: Row(
                                 children: [
-                                  Text(
-                                    t.serie,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          t.serie,
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16),
+                                        ),
+                                        Text(
+                                          provider.selectedFilter != null
+                                              ? "${provider.selectedFilter}: ${provider.selectedValue}"
+                                              : "Estado: ${t.estado}", // CAMBIADO: Status -> Estado
+                                          style: const TextStyle(
+                                              color: Colors.black54, fontSize: 14),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                  Text(
-                                    provider.selectedFilter != null
-                                        ? "${provider.selectedFilter}: ${provider.selectedValue}"
-                                        : "Status: ${t.status}",
-                                    style: const TextStyle(
-                                        color: Colors.black54, fontSize: 14),
-                                  ),
+                                  // AGREGAR ICONO DE HERRAMIENTA AZUL SI FUE ENVIADO A MANTENIMIENTO
+                                  if (t.enviadoMantenimiento)
+                                    const Padding(
+                                      padding: EdgeInsets.only(left: 8.0),
+                                      child: Icon(Icons.build, color: Colors.blue, size: 24),
+                                    ),
                                 ],
                               ),
                             ),
@@ -295,7 +308,7 @@ class _TransformadoresxzonaMembersScreenState
                         ),
                       ),
                       onPressed: () {
-                        // Aquí va la lógica para exportar a xlsx
+                        exportTransformadoresxzonaToExcel(context);
                       },
                       child: const Text(
                         'Exportar a xlsx',

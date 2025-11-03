@@ -47,7 +47,10 @@ class Tranformadoresactuales {
   int cargas;
   String area_fecha_de_entrega_transformador_reparado;
   String? motivo;
-  List<Motivo>? motivos; 
+  List<Motivo>? motivos;
+  // Nuevos campos para tracking de mantenimiento
+  bool enviadoMantenimiento;
+  DateTime? fechaEnvioMantenimiento;
 
   Tranformadoresactuales({
     this.id,
@@ -74,12 +77,14 @@ class Tranformadoresactuales {
     required this.fecha_de_salida_del_taller,
     required this.fecha_entrega_almacen,
     required this.salida_mantenimiento,
-    this.fecha_salida_mantenimiento, // <-- Permite nulo
+    this.fecha_salida_mantenimiento,
     required this.baja,
     required this.cargas,
     required this.area_fecha_de_entrega_transformador_reparado,
     this.motivo,
     this.motivos,
+    this.enviadoMantenimiento = false,
+    this.fechaEnvioMantenimiento,
   });
 
   factory Tranformadoresactuales.fromMap(Map<String, dynamic> map) {
@@ -151,9 +156,14 @@ class Tranformadoresactuales {
         motivos: (get(map, ['Motivos', 'motivos']) as List?)
             ?.map((m) => Motivo.fromMap(m as Map<String, dynamic>))
             .toList(),
+        enviadoMantenimiento: (() {
+          final v = get(map, ['enviadoMantenimiento']);
+          if (v is bool) return v;
+          return v?.toString() == 'true';
+        })(),
+        fechaEnvioMantenimiento: _parseFecha(get(map, ['fechaEnvioMantenimiento'])),
       );
     } catch (e) {
-      // If parsing fails, return a minimal object so app won't crash and log the issue
       print('Tranformadoresactuales.fromMap parse error: $e -- map: $map');
       return Tranformadoresactuales(
         area: '',
@@ -183,6 +193,8 @@ class Tranformadoresactuales {
         baja: '',
         cargas: 0,
         area_fecha_de_entrega_transformador_reparado: '',
+        enviadoMantenimiento: false,
+        fechaEnvioMantenimiento: null,
       );
     }
   }
@@ -217,6 +229,8 @@ class Tranformadoresactuales {
       'Cargas': cargas,
       'Aerea_fecha_de_entrega_transformador_reparado': area_fecha_de_entrega_transformador_reparado,
       'Motivo': motivo,
+      'enviadoMantenimiento': enviadoMantenimiento,
+      'fechaEnvioMantenimiento': fechaEnvioMantenimiento,
     };
     if (motivos != null) {
       json['Motivos'] = motivos!.map((m) => m.toJson()).toList();
