@@ -58,8 +58,8 @@ class TransformadoresxZonaProvider extends ChangeNotifier {
         case 'Marca':
           return t.marca == value;
 
-        case 'Status':
-          return t.status.toLowerCase() == value.toLowerCase();
+        case 'Estado': // CAMBIADO: Status -> Estado
+          return t.estado.toLowerCase() == value.toLowerCase();
 
         case 'Peso':
           final peso = double.tryParse(t.peso_placa_de_datos.replaceAll('KGS', '').trim()) ?? 0;
@@ -141,8 +141,10 @@ class TransformadoresxZonaProvider extends ChangeNotifier {
     try {
       final result = await enviarAMantenimientoZona(id, motivo);
       if (result == 200) {
-        _allTransformadores.removeWhere((t) => t.id == id);
-        _filteredTransformadores = List.from(_allTransformadores);
+        // Marcar como enviado a mantenimiento en lugar de eliminar
+        final transformador = _allTransformadores.firstWhere((t) => t.id == id);
+        transformador.enviadoMantenimiento = true;
+        transformador.fechaEnvioMantenimiento = DateTime.now();
         notifyListeners();
       }
       return result;

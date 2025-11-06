@@ -89,6 +89,9 @@ class Mantenimiento {
   String? baja;
   int? cargas;
   String? area_fecha_de_entrega_transformador_reparado;
+  // Nuevos campos para reparados
+  DateTime? fechaReparacion;
+  String? destinoReparado;
 
   Mantenimiento({
     this.id = '',
@@ -124,6 +127,8 @@ class Mantenimiento {
     this.baja,
     this.cargas,
     this.area_fecha_de_entrega_transformador_reparado,
+    this.fechaReparacion,
+    this.destinoReparado,
   });
 
   factory Mantenimiento.fromMap(Map<String, dynamic> map) {
@@ -222,6 +227,8 @@ class Mantenimiento {
           return int.tryParse(v?.toString() ?? '0');
         })(),
         area_fecha_de_entrega_transformador_reparado: _parseString(get(map, ['Aerea_fecha_de_entrega_transformador_reparado', 'area_fecha_de_entrega_transformador_reparado'])),
+        fechaReparacion: _parseFecha(get(map, ['fechaReparacion'])),
+        destinoReparado: _parseString(get(map, ['destinoReparado'])),
       );
     } catch (e) {
       print('Mantenimiento.fromMap parse error: $e -- map: $map');
@@ -282,6 +289,8 @@ class Mantenimiento {
       'Baja': baja,
       'Cargas': cargas,
       'Aerea_fecha_de_entrega_transformador_reparado': area_fecha_de_entrega_transformador_reparado,
+      'fechaReparacion': fechaReparacion,
+      'destinoReparado': destinoReparado,
     };
     if (motivos != null) {
       json['Motivos'] = motivos!.map((m) => m.toJson()).toList();

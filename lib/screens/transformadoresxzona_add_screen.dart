@@ -61,7 +61,7 @@ class _TransformadoresxzonaAddScreenState extends State<TransformadoresxzonaAddS
       aceite: aceite,
       peso_placa_de_datos: peso_placa_de_datos,
       relacion: int.tryParse(relacionController.text) ?? 0,
-      status: statusController.text,
+      estado: statusController.text,
       fechaMovimiento: fechaMovimiento,
       reparado: false,
     );
@@ -77,7 +77,7 @@ class _TransformadoresxzonaAddScreenState extends State<TransformadoresxzonaAddS
     return Scaffold(
       appBar: AppBar(
         title: const Text('Agregar Transformador'),
-        backgroundColor: Colors.blue[700],
+        backgroundColor: const Color(0xFF2A1AFF),
         foregroundColor: Colors.white,
       ),
       body: Padding(

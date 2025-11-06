@@ -3,6 +3,7 @@ import 'package:inventario_proyecto/models/mantenimiento.dart';
 import 'package:inventario_proyecto/screens/mantenimiento_update.dart';
 import 'package:inventario_proyecto/services/mantenimiento_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:inventario_proyecto/widgets/eliminar_dialog.dart';
 import 'package:inventario_proyecto/widgets/motivos_list.dart';
 import 'package:inventario_proyecto/models/motivo.dart';
 import 'package:provider/provider.dart';
@@ -158,6 +159,11 @@ class MantenimientoOperationsScreen extends StatelessWidget {
                       .area_fecha_de_entrega_transformador_reparado!.isNotEmpty)
                 Text(
                     'Área/Fecha entrega transformador reparado: ${mantenimiento.area_fecha_de_entrega_transformador_reparado}'),
+              // Nuevos campos para reparados
+              if (mantenimiento.fechaReparacion != null)
+                Text('Fecha de reparación: ${_formatFecha(mantenimiento.fechaReparacion)}'),
+              if (mantenimiento.destinoReparado != null && mantenimiento.destinoReparado!.isNotEmpty)
+                Text('Destino: ${mantenimiento.destinoReparado}'),
 
               const SizedBox(height: 12),
 
@@ -169,17 +175,20 @@ class MantenimientoOperationsScreen extends StatelessWidget {
               const SizedBox(height: 24),
 
               // Eliminar
-              SizedBox(
+           SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                   onPressed: () async {
-                    await provider
-                        .deleteMantenimientoProvider(mantenimiento.id ?? '');
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Mantenimiento eliminado')),
-                    );
-                    Navigator.pop(context);
+                    final confirmar = await eliminarDialog(context);
+                    if (confirmar == true) {
+                      await provider
+                          .deleteMantenimientoProvider(mantenimiento.id ?? '');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Mantenimiento eliminado')),
+                      );
+                      Navigator.pop(context);
+                    }
                   },
                   child: const Text('Eliminar',
                       style: TextStyle(color: Colors.white)),
@@ -201,7 +210,6 @@ class MantenimientoOperationsScreen extends StatelessWidget {
                             mantenimiento: mantenimiento),
                       ),
                     ).then((_) {
-                      // Actualizar datos después de regresar de la actualización
                       provider.refreshData();
                     });
                   },
@@ -225,18 +233,19 @@ class MantenimientoOperationsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
 
-              // Marcar como reparado
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.cyan),
-                  onPressed: () async {
-                    await _marcarReparado(context, provider);
-                  },
-                  child: const Text("Marcar como reparado",
-                      style: TextStyle(color: Colors.white)),
+              // Marcar como reparado - SOLO SI NO ESTÁ REPARADO
+              if (mantenimiento.estado.toLowerCase() != "reparado")
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.cyan),
+                    onPressed: () async {
+                      await _marcarReparado(context, provider);
+                    },
+                    child: const Text("Marcar como reparado",
+                        style: TextStyle(color: Colors.white)),
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -248,38 +257,32 @@ class MantenimientoOperationsScreen extends StatelessWidget {
       BuildContext context, MantenimientoProvider provider) async {
     FirebaseFirestore db = FirebaseFirestore.instance;
     final mantenimientoId = mantenimiento.id ?? '';
-    final mantenimientoData = mantenimiento.toJson();
+    
+    String? destino = await _seleccionarDestino(context);
 
-    String? origen = mantenimientoData["origen"];
+    if (destino != null) {
+      // Actualizar el estado en mantenimiento a "reparado" en lugar de eliminarlo
+      await db.collection("mantenimiento2025").doc(mantenimientoId).update({
+        "estado": "reparado",
+        "fechaReparacion": Timestamp.now(),
+        "destinoReparado": destino, // Guardar a dónde fue enviado
+      });
 
-    if (origen != null && origen.isNotEmpty) {
-      await db.collection(origen).add({
+      // También copiar a la colección destino
+      final mantenimientoData = mantenimiento.toJson();
+      await db.collection(destino).add({
         ...mantenimientoData,
         "estado": "reparado",
         "fechaReparacion": Timestamp.now(),
+        "destinoReparado": destino,
       });
 
-      await provider.deleteMantenimientoProvider(mantenimientoId);
-
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Transformador enviado a $origen")),
+        SnackBar(content: Text("Transformador marcado como reparado y enviado a $destino")),
       );
-    } else {
-      String? destino = await _seleccionarDestino(context);
-
-      if (destino != null) {
-        await db.collection(destino).add({
-          ...mantenimientoData,
-          "estado": "reparado",
-          "fechaReparacion": Timestamp.now(),
-        });
-
-        await provider.deleteMantenimientoProvider(mantenimientoId);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Transformador enviado a $destino")),
-        );
-      }
+      
+      // Actualizar la vista
+      provider.refreshData();
     }
   }
 

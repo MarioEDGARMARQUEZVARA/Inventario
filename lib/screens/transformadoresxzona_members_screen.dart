@@ -3,7 +3,9 @@ import 'package:inventario_proyecto/models/transformadoresxzona.dart';
 import 'package:inventario_proyecto/screens/transformadoresxzona_operations_screen.dart';
 import 'package:inventario_proyecto/screens/transformadoresxzona_add_screen.dart';
 import 'package:inventario_proyecto/providers/transformadoresxzona_provider.dart';
+import 'package:inventario_proyecto/services/transformadoresxzona_service.dart';
 import 'package:provider/provider.dart';
+import '../providers/session_provider.dart';
 
 class TransformadoresxzonaMembersScreen extends StatefulWidget {
   final String zona;
@@ -30,6 +32,10 @@ class _TransformadoresxzonaMembersScreenState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<TransformadoresxZonaProvider>();
       provider.fetchTransformadores(widget.zona);
+      
+      // Iniciar sesión de inactividad
+      final sessionProvider = context.read<SessionProvider>();
+      sessionProvider.startSession();
     });
   }
 
@@ -52,8 +58,8 @@ class _TransformadoresxzonaMembersScreenState
       case 'Marca':
         return data.map((t) => t.marca).toSet().toList();
 
-      case 'Status':
-        return data.map((t) => t.status).toSet().toList();
+      case 'Estado': // CAMBIADO: Status -> Estado
+        return data.map((t) => t.estado).toSet().toList();
 
       case 'Peso':
         final pesos = data
@@ -116,9 +122,13 @@ class _TransformadoresxzonaMembersScreenState
 
   @override
   Widget build(BuildContext context) {
+    final sessionProvider = Provider.of<SessionProvider>(context);
+
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF2A1AFF),
+        backgroundColor: sessionProvider.showTimeoutDialog 
+            ? Colors.orange 
+            : const Color(0xFF2A1AFF),
         title: Text(
           'ZONA: ${widget.zona.toUpperCase()}',
           style: const TextStyle(color: Colors.white),
@@ -134,21 +144,23 @@ class _TransformadoresxzonaMembersScreenState
 
               return PopupMenuButton<String>(
                 icon: const Icon(Icons.filter_alt),
-                onSelected: (value) {
-                  if (value == "clear") {
-                    provider.clearFilters();
-                    setState(() {
-                      currentPage = 0;
-                    });
-                  } else if (value != null) {
-                    _showSubMenu(context, value, data);
-                  }
-                },
+                onSelected: sessionProvider.showTimeoutDialog 
+                    ? null 
+                    : (value) {
+                        if (value == "clear") {
+                          provider.clearFilters();
+                          setState(() {
+                            currentPage = 0;
+                          });
+                        } else if (value != null) {
+                          _showSubMenu(context, value, data);
+                        }
+                      },
                 itemBuilder: (context) => [
                   const PopupMenuItem(value: 'Capacidad', child: Text('Capacidad')),
                   const PopupMenuItem(value: 'Fases', child: Text('Fases')),
                   const PopupMenuItem(value: 'Marca', child: Text('Marca')),
-                  const PopupMenuItem(value: 'Status', child: Text('Status')),
+                  const PopupMenuItem(value: 'Estado', child: Text('Estado')), // CAMBIADO: Status -> Estado
                   const PopupMenuItem(value: 'Peso', child: Text('Peso')),
                   const PopupMenuItem(value: 'aceite', child: Text('aceite')),
                   const PopupMenuDivider(),
@@ -161,25 +173,17 @@ class _TransformadoresxzonaMembersScreenState
       ),
       body: Consumer<TransformadoresxZonaProvider>(
         builder: (context, provider, child) {
-          if (provider.isLoading) {
+          if (provider.isLoading && !sessionProvider.showTimeoutDialog) {
             return const Center(child: CircularProgressIndicator());
           }
 
           var transformadores = provider.transformadoresFiltrados
               .where((t) => t.zona == widget.zona)
               .toList();
-
-          if (transformadores.isEmpty) {
-            return const Center(
-                child: Text('No hay transformadores registrados.'));
-          }
-
-          // Paginación
           final totalPages = (transformadores.length / itemsPerPage).ceil();
           final start = currentPage * itemsPerPage;
           final end = (start + itemsPerPage).clamp(0, transformadores.length);
           final pageItems = transformadores.sublist(start, end);
-
           return Stack(
             children: [
               Padding(
@@ -187,7 +191,7 @@ class _TransformadoresxzonaMembersScreenState
                 child: Column(
                   children: [
                     // Mostrar filtro activo si existe
-                    if (provider.selectedFilter != null && provider.selectedValue != null)
+                    if (provider.selectedFilter != null && provider.selectedValue != null && !sessionProvider.showTimeoutDialog)
                       Container(
                         padding: const EdgeInsets.all(8),
                         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -204,61 +208,101 @@ class _TransformadoresxzonaMembersScreenState
                             ),
                             IconButton(
                               icon: const Icon(Icons.close, size: 16),
-                              onPressed: () {
-                                provider.clearFilters();
-                                setState(() {
-                                  currentPage = 0;
-                                });
-                              },
+                              onPressed: sessionProvider.showTimeoutDialog 
+                                  ? null 
+                                  : () {
+                                      provider.clearFilters();
+                                      setState(() {
+                                        currentPage = 0;
+                                      });
+                                    },
                             ),
                           ],
                         ),
                       ),
                     Expanded(
-                      child: ListView.builder(
-                        itemCount: pageItems.length,
-                        itemBuilder: (context, index) {
-                          final t = pageItems[index];
-                          return InkWell(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      TrasnformadoresxzonaOperationsScreen(
-                                          transformador: t),
-                                ),
-                              );
-                            },
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(
-                                  vertical: 6, horizontal: 8),
-                              padding: const EdgeInsets.all(8),
-                              color: Colors.grey[300],
+                      child: sessionProvider.showTimeoutDialog
+                          ? const Center(
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
+                                  Icon(Icons.timer, size: 50, color: Colors.orange),
+                                  SizedBox(height: 16),
                                   Text(
-                                    t.serie,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16),
+                                    'Sesión por expirar',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.orange,
+                                    ),
                                   ),
+                                  SizedBox(height: 8),
                                   Text(
-                                    provider.selectedFilter != null
-                                        ? "${provider.selectedFilter}: ${provider.selectedValue}"
-                                        : "Status: ${t.status}",
-                                    style: const TextStyle(
-                                        color: Colors.black54, fontSize: 14),
+                                    'Abre el menú lateral para extender tu sesión',
+                                    textAlign: TextAlign.center,
                                   ),
                                 ],
                               ),
-                            ),
-                          );
-                        },
-                      ),
+                            )
+                          : (transformadores.isEmpty
+                              ? const Center(
+                                  child: Text('No hay transformadores registrados.'))
+                              : ListView.builder(
+                                  itemCount: pageItems.length,
+                                  itemBuilder: (context, index) {
+                                    final t = pageItems[index];
+                                    return InkWell(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                TrasnformadoresxzonaOperationsScreen(
+                                                    transformador: t),
+                                          ),
+                                        );
+                                      },
+                                      child: Container(
+                                        margin: const EdgeInsets.symmetric(
+                                            vertical: 6, horizontal: 8),
+                                        padding: const EdgeInsets.all(8),
+                                        color: Colors.grey[300],
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    t.serie,
+                                                    style: const TextStyle(
+                                                        fontWeight: FontWeight.bold,
+                                                        fontSize: 16),
+                                                  ),
+                                                  Text(
+                                                    provider.selectedFilter != null
+                                                        ? "${provider.selectedFilter}: ${provider.selectedValue}"
+                                                        : "Estado: ${t.estado}", // CAMBIADO: Status -> Estado
+                                                    style: const TextStyle(
+                                                        color: Colors.black54, fontSize: 14),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            // AGREGAR ICONO DE HERRAMIENTA AZUL SI FUE ENVIADO A MANTENIMIENTO
+                                            if (t.enviadoMantenimiento)
+                                              const Padding(
+                                                padding: EdgeInsets.only(left: 8.0),
+                                                child: Icon(Icons.build, color: Colors.blue, size: 24),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                )),
                     ),
-                    if (totalPages > 1)
+                    if (totalPages > 1 && !sessionProvider.showTimeoutDialog)
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -289,14 +333,18 @@ class _TransformadoresxzonaMembersScreenState
                     height: 48,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
+                        backgroundColor: sessionProvider.showTimeoutDialog 
+                            ? Colors.grey 
+                            : Colors.green,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      onPressed: () {
-                        // Aquí va la lógica para exportar a xlsx
-                      },
+                      onPressed: sessionProvider.showTimeoutDialog 
+                          ? null 
+                          : () {
+                              exportTransformadoresxzonaToExcel(context);
+                            },
                       child: const Text(
                         'Exportar a xlsx',
                         style: TextStyle(
@@ -310,18 +358,29 @@ class _TransformadoresxzonaMembersScreenState
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF2196F3),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => TransformadoresxzonaAddScreen(zona: widget.zona),
+      floatingActionButton: sessionProvider.showTimeoutDialog
+          ? FloatingActionButton(
+              backgroundColor: Colors.orange,
+              foregroundColor: Colors.white,
+              onPressed: () {
+                Scaffold.of(context).openDrawer();
+              },
+              child: const Icon(Icons.warning),
+            )
+          : FloatingActionButton(
+              backgroundColor: const Color(0xFF2196F3),
+              onPressed: sessionProvider.showTimeoutDialog 
+                  ? null 
+                  : () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => TransformadoresxzonaAddScreen(zona: widget.zona),
+                        ),
+                      );
+                    },
+              child: const Icon(Icons.add, size: 32),
             ),
-          );
-        },
-        child: const Icon(Icons.add, size: 32),
-      ),
     );
   }
 }

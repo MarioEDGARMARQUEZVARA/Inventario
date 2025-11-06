@@ -1,5 +1,6 @@
- import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'motivo.dart';
+
 class RangoFecha {
   final DateTime inicio;
   final DateTime fin;
@@ -38,6 +39,7 @@ class RangoFecha {
     throw FormatException('Tipo de fecha no soportado: $value');
   }
 }
+
 class TransformadoresXZona {
   String? id;
   String zona;
@@ -49,11 +51,14 @@ class TransformadoresXZona {
   String aceite;
   String peso_placa_de_datos;
   int relacion;
-  String status;
+  String estado; // CAMBIADO: status -> estado
   DateTime? fechaMovimiento;
   bool reparado;
   String? motivo;
-  List<Motivo>? motivos; 
+  List<Motivo>? motivos;
+  // Nuevos campos para tracking de mantenimiento
+  bool enviadoMantenimiento;
+  DateTime? fechaEnvioMantenimiento;
 
   TransformadoresXZona({
     this.id,
@@ -66,12 +71,15 @@ class TransformadoresXZona {
     required this.aceite,
     required this.peso_placa_de_datos,
     required this.relacion,
-    required this.status,
+    required this.estado, // CAMBIADO: status -> estado
     required this.fechaMovimiento,
     required this.reparado,
     this.motivo,
     this.motivos,
+    this.enviadoMantenimiento = false,
+    this.fechaEnvioMantenimiento,
   });
+
   factory TransformadoresXZona.fromMap(Map<String, dynamic> map) {
     DateTime? parseDate(dynamic value) {
       if (value == null) return null;
@@ -86,13 +94,14 @@ class TransformadoresXZona {
       }
       return null;
     }
-    // Helper to try multiple possible keys that may exist in Firestore docs
+
     dynamic get(Map<String, dynamic> m, List<String> keys) {
       for (var k in keys) {
         if (m.containsKey(k) && m[k] != null) return m[k];
       }
       return null;
     }
+
     return TransformadoresXZona(
       zona: get(map, ['Zona', 'zona', 'ZONA'])?.toString() ?? '',
       economico: (() {
@@ -120,7 +129,7 @@ class TransformadoresXZona {
         if (v is int) return v;
         return int.tryParse(v?.toString() ?? '0') ?? 0;
       })(),
-      status: get(map, ['Status', 'status'])?.toString() ?? '',
+      estado: get(map, ['Estado', 'estado'])?.toString() ?? '', // CAMBIADO: Status -> Estado
       fechaMovimiento: parseDate(get(map, ['Fecha_mov', 'FechaMovimiento', 'fechaMovimiento'])),
       reparado: (() {
         final v = get(map, ['Reparado', 'reparado']);
@@ -131,9 +140,15 @@ class TransformadoresXZona {
       motivos: (get(map, ['Motivos', 'motivos']) as List?)
           ?.map((m) => Motivo.fromMap(m as Map<String, dynamic>))
           .toList(),
-
+      enviadoMantenimiento: (() {
+        final v = get(map, ['enviadoMantenimiento']);
+        if (v is bool) return v;
+        return v?.toString() == 'true';
+      })(),
+      fechaEnvioMantenimiento: parseDate(get(map, ['fechaEnvioMantenimiento'])),
     );
   }
+
   Map<String, dynamic> toJson() {
     final json = {
       'Zona': zona,
@@ -145,10 +160,12 @@ class TransformadoresXZona {
       'aceite': aceite,
       'Peso_kg': peso_placa_de_datos,
       'Relacion': relacion,
-      'Status': status,
+      'Estado': estado, // CAMBIADO: Status -> Estado
       'Fecha_mov': fechaMovimiento,
       'Reparado': reparado,
       'Motivo': motivo,
+      'enviadoMantenimiento': enviadoMantenimiento,
+      'fechaEnvioMantenimiento': fechaEnvioMantenimiento,
     };
     if (motivos != null) {
       json['Motivos'] = motivos!.map((m) => m.toJson()).toList();
