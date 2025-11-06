@@ -107,7 +107,7 @@ class _MantenimientoUpdateScreenState extends State<MantenimientoUpdateScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Actualizar Mantenimiento'),
-        backgroundColor: Colors.blue[700],
+        backgroundColor: const Color(0xFF2A1AFF),
         foregroundColor: Colors.white,
       ),
       body: Padding(

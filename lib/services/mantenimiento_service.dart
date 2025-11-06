@@ -44,37 +44,18 @@ Future<List<Mantenimiento>> getMantenimientos() async {
   }).toList();
 }
 
-/// Marcar como reparado y devolver al origen
+/// Marcar como reparado (actualizar estado en lugar de eliminar)
 Future<int> marcarReparado(String id, {String? destinoManual}) async {
   int code = 0;
   try {
-    DocumentSnapshot<Map<String, dynamic>> doc =
-        await db.collection("mantenimiento2025").doc(id).get();
+    // Actualizar el estado en lugar de eliminar
+    await db.collection("mantenimiento2025").doc(id).update({
+      "estado": "reparado",
+      "fechaReparacion": Timestamp.now(),
+      "destinoReparado": destinoManual ?? "transformadores2025",
+    });
 
-    if (doc.exists) {
-      Map<String, dynamic>? data = doc.data();
-      String? origen = data?["origen"];
-
-      // Decidir destino
-      String destino;
-      if (origen == "transformadores2025" || origen == "Transformadoresxzona") {
-        destino = origen!;
-      } else if (destinoManual != null) {
-        destino = destinoManual; // Elegido manualmente
-      } else {
-        return 400; // Falta decidir destino
-      }
-
-      // Copiar a destino
-      await db.collection(destino).add(data!);
-
-      // Eliminar de mantenimiento
-      await db.collection("mantenimiento2025").doc(id).delete();
-
-      code = 200;
-    } else {
-      code = 404;
-    }
+    code = 200;
   } catch (_) {
     code = 500;
   }
@@ -144,6 +125,7 @@ Stream<List<Mantenimiento>> mantenimientosStream() {
         }
       }).toList());
 }
+
 Future<void> exportMantenimientosToExcel(BuildContext context) async {
     var status = await Permission.manageExternalStorage.request();
   if (!status.isGranted) {
@@ -157,7 +139,7 @@ Future<void> exportMantenimientosToExcel(BuildContext context) async {
   var excel = Excel.createExcel();
   Sheet sheetObject = excel['Pagina 1'];
 
-  List<String> headers = ['Numero de mantenimiento', 'Fecha de llegada', 'Área', 'Económico', 'Marca', 'Capacidad', 'Fases', 'Serie', 'Litros', 'Kilos', 'Fecha de fabricación', 'Fecha de prueba', 'RT Fase A', 'RT Fase B', 'RT Fase C', 'Resistencia de aislamiento', 'Rigidez dieléctrica', 'Estado', 'Fecha de alta', 'Fecha de salida', 'Motivo'];
+  List<String> headers = ['Numero de mantenimiento', 'Fecha de llegada', 'Área', 'Económico', 'Marca', 'Capacidad', 'Fases', 'Serie', 'Litros', 'Kilos', 'Fecha de fabricación', 'Fecha de prueba', 'RT Fase A', 'RT Fase B', 'RT Fase C', 'Resistencia de aislamiento', 'Rigidez dieléctrica', 'Estado', 'Fecha de alta', 'Fecha de salida', 'Motivo', 'Fecha Reparación', 'Destino Reparado'];
   for (int i = 0; i < headers.length; i++) {
     sheetObject
         .cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0))
@@ -189,6 +171,8 @@ Future<void> exportMantenimientosToExcel(BuildContext context) async {
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 18, rowIndex: i + 1)).value = TextCellValue(item.fecha_de_alta.toString() ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 19, rowIndex: i + 1)).value = TextCellValue(item.fecha_de_salida_del_taller?.toString() ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 20, rowIndex: i + 1)).value = TextCellValue(item.motivo ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 21, rowIndex: i + 1)).value = TextCellValue(item.fechaReparacion?.toString() ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 22, rowIndex: i + 1)).value = TextCellValue(item.destinoReparado ?? '');
 
     
 
@@ -209,4 +193,3 @@ Future<void> exportMantenimientosToExcel(BuildContext context) async {
     );
   }
 }
-

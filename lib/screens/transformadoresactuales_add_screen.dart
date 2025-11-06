@@ -132,7 +132,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
     return Scaffold(
       appBar: AppBar(
         title: const Text('Agregar Transformador Actual'),
-        backgroundColor: Colors.blue[700],
+        backgroundColor: const Color(0xFF2A1AFF),
         foregroundColor: Colors.white,
       ),
       body: Padding(
@@ -296,6 +296,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                     labelText: 'Valor prueba 1',
                     border: OutlineInputBorder(),
                   ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -304,6 +305,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                     labelText: 'Valor prueba 2',
                     border: OutlineInputBorder(),
                   ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -312,6 +314,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                     labelText: 'Valor prueba 3',
                     border: OutlineInputBorder(),
                   ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -320,6 +323,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                     labelText: 'Resistencia aislamiento (megaoms)',
                     border: OutlineInputBorder(),
                   ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -328,6 +332,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                     labelText: 'Rigidez dieléctrica (kv)',
                     border: OutlineInputBorder(),
                   ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -435,6 +440,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                     labelText: 'Baja',
                     border: OutlineInputBorder(),
                   ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -444,14 +450,16 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                     border: OutlineInputBorder(),
                   ),
                   keyboardType: TextInputType.number,
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: areaEntregaReparadoController,
                   decoration: const InputDecoration(
-                    labelText: 'Área fecha entrega transformador reparado',
+                    labelText: 'Área y fecha entrega transformador reparado',
                     border: OutlineInputBorder(),
                   ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
@@ -465,7 +473,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[700],
+                    backgroundColor: const Color(0xFF2196F3),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),

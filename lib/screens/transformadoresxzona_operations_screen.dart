@@ -7,6 +7,7 @@ import 'package:inventario_proyecto/screens/transformadoresxzona_update.dart';
 import 'package:inventario_proyecto/widgets/motivo_dialog.dart';
 import 'package:provider/provider.dart';
 import '../providers/transformadoresxzona_provider.dart';
+import 'package:inventario_proyecto/widgets/eliminar_dialog.dart';
 
 class TrasnformadoresxzonaOperationsScreen extends StatelessWidget {
   final TransformadoresXZona transformador;
@@ -69,7 +70,7 @@ class TrasnformadoresxzonaOperationsScreen extends StatelessWidget {
             if (transformador.aceite.isNotEmpty) Text('Litros de aceite: ${transformador.aceite}'),
             if (transformador.peso_placa_de_datos.isNotEmpty) Text('Peso en kg: ${transformador.peso_placa_de_datos}'),
             if (transformador.relacion != null && transformador.relacion != 0) Text('Relación: ${transformador.relacion}'),
-            if (transformador.status.isNotEmpty) Text('Status: ${transformador.status}'),
+            if (transformador.estado.isNotEmpty) Text('Status: ${transformador.estado}'),
             if (fechaMov != null) Text('Fecha de movimiento: $fechaMov'),
             Text('Reparado: ${transformador.reparado ? "Sí" : "No"}'),
             const SizedBox(height: 12),
@@ -98,12 +99,13 @@ class TrasnformadoresxzonaOperationsScreen extends StatelessWidget {
             const SizedBox(height: 24),
 
             // Eliminar
-            SizedBox(
+        SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                 onPressed: () async {
-                  if (transformador.id != null) {
+                  final confirmar = await eliminarDialog(context);
+                  if (confirmar == true && transformador.id != null) {
                     await provider.deleteTransformadorProvider(transformador.id!);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Transformador eliminado')),

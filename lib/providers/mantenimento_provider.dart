@@ -82,12 +82,16 @@ class MantenimientoProvider extends ChangeNotifier {
     }
   }
 
-  // 🔁 Marcar como reparado
+  // 🔁 Marcar como reparado (actualizar estado en lugar de eliminar)
   Future<int> marcarReparadoProvider(String id, {String? destinoManual}) async {
     try {
       final result = await marcarReparado(id, destinoManual: destinoManual);
       if (result == 200) {
-        _mantenimientos.removeWhere((m) => m.id == id);
+        // Actualizar el estado localmente
+        final mantenimiento = _mantenimientos.firstWhere((m) => m.id == id);
+        mantenimiento.estado = "reparado";
+        mantenimiento.fechaReparacion = DateTime.now();
+        mantenimiento.destinoReparado = destinoManual ?? "transformadores2025";
         notifyListeners();
       }
       return result;

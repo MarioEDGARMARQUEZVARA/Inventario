@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:inventario_proyecto/models/tranformadoresactuales.dart';
 import 'package:inventario_proyecto/screens/transformadoresactuales_update.dart';
 import 'package:inventario_proyecto/services/transformadores_service.dart';
+import 'package:inventario_proyecto/widgets/eliminar_dialog.dart';
 import 'package:inventario_proyecto/widgets/motivo_dialog.dart';
 import 'package:provider/provider.dart';
 import '../providers/transformadores2025_provider.dart';
@@ -68,22 +69,19 @@ class TransformadoresActualesOperationsScreen extends StatelessWidget {
             const SizedBox(height: 24),
 
             // Eliminar
-            SizedBox(
+                SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                 onPressed: () async {
-                  if (transformador.id == null) {
+                  final confirmar = await eliminarDialog(context);
+                  if (confirmar == true && transformador.id != null) {
+                    await provider.deleteTransformadorProvider(transformador.id!);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Error: El ID del transformador es nulo')),
+                      const SnackBar(content: Text('Transformador eliminado')),
                     );
-                    return;
+                    Navigator.pop(context);
                   }
-                  await provider.deleteTransformadorProvider(transformador.id!);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Transformador eliminado')),
-                  );
-                  Navigator.pop(context);
                 },
                 child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
               ),
