@@ -3,6 +3,7 @@ import 'package:inventario_proyecto/models/mantenimiento.dart';
 import 'package:inventario_proyecto/screens/mantenimiento_update.dart';
 import 'package:inventario_proyecto/services/mantenimiento_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:inventario_proyecto/widgets/eliminar_dialog.dart';
 import 'package:inventario_proyecto/widgets/motivos_list.dart';
 import 'package:inventario_proyecto/models/motivo.dart';
 import 'package:provider/provider.dart';
@@ -174,17 +175,20 @@ class MantenimientoOperationsScreen extends StatelessWidget {
               const SizedBox(height: 24),
 
               // Eliminar
-              SizedBox(
+           SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                   onPressed: () async {
-                    await provider
-                        .deleteMantenimientoProvider(mantenimiento.id ?? '');
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Mantenimiento eliminado')),
-                    );
-                    Navigator.pop(context);
+                    final confirmar = await eliminarDialog(context);
+                    if (confirmar == true) {
+                      await provider
+                          .deleteMantenimientoProvider(mantenimiento.id ?? '');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Mantenimiento eliminado')),
+                      );
+                      Navigator.pop(context);
+                    }
                   },
                   child: const Text('Eliminar',
                       style: TextStyle(color: Colors.white)),

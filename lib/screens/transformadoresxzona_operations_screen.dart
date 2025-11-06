@@ -7,6 +7,7 @@ import 'package:inventario_proyecto/screens/transformadoresxzona_update.dart';
 import 'package:inventario_proyecto/widgets/motivo_dialog.dart';
 import 'package:provider/provider.dart';
 import '../providers/transformadoresxzona_provider.dart';
+import 'package:inventario_proyecto/widgets/eliminar_dialog.dart';
 
 class TrasnformadoresxzonaOperationsScreen extends StatelessWidget {
   final TransformadoresXZona transformador;
@@ -98,12 +99,13 @@ class TrasnformadoresxzonaOperationsScreen extends StatelessWidget {
             const SizedBox(height: 24),
 
             // Eliminar
-            SizedBox(
+        SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                 onPressed: () async {
-                  if (transformador.id != null) {
+                  final confirmar = await eliminarDialog(context);
+                  if (confirmar == true && transformador.id != null) {
                     await provider.deleteTransformadorProvider(transformador.id!);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Transformador eliminado')),

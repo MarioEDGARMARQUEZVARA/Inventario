@@ -13,7 +13,8 @@ class _AuthScreenState extends State<AuthScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLogin = true; 
-  bool _isLoading = false; 
+  bool _isLoading = false;
+  bool _obscurePassword = true;
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) {
@@ -44,6 +45,8 @@ class _AuthScreenState extends State<AuthScreen> {
         errorMessage = "El correo ya está registrado";
       } else if (e.code == 'weak-password') {
         errorMessage = "La contraseña es muy débil";
+      } else if (e.code == 'invalid-email') {
+        errorMessage = "El formato del correo es inválido";
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -52,6 +55,39 @@ class _AuthScreenState extends State<AuthScreen> {
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return "La contraseña es requerida";
+    }
+    
+    // Validar longitud mínima
+    if (value.length < 6) {
+      return "La contraseña debe tener al menos 6 caracteres";
+    }
+    
+    // Validar que tenga al menos una mayúscula
+    if (!value.contains(RegExp(r'[A-Z]'))) {
+      return "Debe contener al menos una letra mayúscula";
+    }
+    
+    // Validar que tenga al menos una minúscula
+    if (!value.contains(RegExp(r'[a-z]'))) {
+      return "Debe contener al menos una letra minúscula";
+    }
+    
+    // Validar que tenga al menos un número
+    if (!value.contains(RegExp(r'[0-9]'))) {
+      return "Debe contener al menos un número";
+    }
+    
+    // Validar que tenga al menos un caracter especial
+    if (!value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
+      return "Debe contener al menos un caracter especial (!@#\$%^&*(), etc.)";
+    }
+    
+    return null;
   }
 
   @override
@@ -144,15 +180,44 @@ class _AuthScreenState extends State<AuthScreen> {
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                                      color: Colors.grey,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _obscurePassword = !_obscurePassword;
+                                      });
+                                    },
+                                  ),
                                 ),
-                                obscureText: true,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty || value.length < 6) {
-                                    return "La contraseña debe tener al menos 6 caracteres";
-                                  }
-                                  return null;
-                                },
+                                obscureText: _obscurePassword,
+                                validator: _isLogin ? 
+                                  // Validación más simple para login
+                                  (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return "La contraseña es requerida";
+                                    }
+                                    return null;
+                                  } 
+                                  : 
+                                  // Validación completa para registro
+                                  _validatePassword,
                               ),
+                              if (!_isLogin) ...[
+                                const SizedBox(height: 12),
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 8.0),
+                                  child: Text(
+                                    'La contraseña debe contener:\n• Al menos 6 caracteres\n• Una mayúscula y una minúscula\n• Un número\n• Un carácter especial (!@#\$%^&*)',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ),
+                              ],
                               const SizedBox(height: 20),
                               // Botón de Login/Registro
                               SizedBox(
@@ -179,7 +244,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               const SizedBox(height: 10),
                               // Cambiar entre Login y Registro
                               TextButton(
-                                onPressed: () => setState(() => _isLogin = !_isLogin),
+                                onPressed: _isLoading ? null : () => setState(() => _isLogin = !_isLogin),
                                 child: Text(
                                   _isLogin
                                       ? "¿No tienes cuenta? Regístrate"
@@ -191,14 +256,6 @@ class _AuthScreenState extends State<AuthScreen> {
                           ),
                         ),
                         const SizedBox(height: 18),
-                        // Demo info
-                        Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: const Color.fromARGB(255, 255, 255, 255),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
                       ],
                     ),
                   ),

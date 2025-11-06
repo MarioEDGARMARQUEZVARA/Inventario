@@ -251,6 +251,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                     labelText: 'RT. FASE A',
                     border: OutlineInputBorder(),
                   ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -259,6 +260,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                     labelText: 'RT. FASE B',
                     border: OutlineInputBorder(),
                   ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -267,6 +269,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                     labelText: 'RT. FASE C',
                     border: OutlineInputBorder(),
                   ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -275,6 +278,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                     labelText: 'Resistencia de Aislamiento',
                     border: OutlineInputBorder(),
                   ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -283,6 +287,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                     labelText: 'Rigidez Dieléctrica',
                     border: OutlineInputBorder(),
                   ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
