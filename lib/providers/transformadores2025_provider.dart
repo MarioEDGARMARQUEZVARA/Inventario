@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:inventario_proyecto/models/tranformadoresactuales.dart';
 import 'package:inventario_proyecto/services/transformadores_service.dart';
+import 'package:inventario_proyecto/services/mantenimiento_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Transformadores2025Provider extends ChangeNotifier {
   final List<Tranformadoresactuales> _transformadores = [];
@@ -83,13 +85,49 @@ class Transformadores2025Provider extends ChangeNotifier {
     }
   }
 
-  // 🔁 Enviar a mantenimiento
+  // 🔁 Enviar a mantenimiento CON NÚMERO AUTOMÁTICO Y TODOS LOS DATOS
   Future<int> enviarAMantenimientoProvider(String id, String motivo) async {
     try {
-      final result = await enviarAMantenimiento(id, motivo);
+      // 1. Buscar el transformador en la lista local
+      final transformador = _transformadores.firstWhere((t) => t.id == id);
+      
+      // 2. Preparar todos los datos del transformador
+      final datosTransformador = {
+        'area': transformador.area,
+        'capacidadKVA': transformador.capacidadKVA,
+        'economico': transformador.economico,
+        'estado': transformador.estado,
+        'fases': transformador.fases,
+        'fecha_de_llegada': transformador.fecha_de_llegada,
+        'mes': transformador.mes,
+        'marca': transformador.marca,
+        'aceite': transformador.aceite,
+        'serie': transformador.serie,
+        'peso_placa_de_datos': transformador.peso_placa_de_datos,
+        'fecha_fabricacion': transformador.fecha_fabricacion,
+        'fecha_prueba': transformador.fecha_prueba,
+        'valor_prueba_1': transformador.valor_prueba_1,
+        'valor_prueba_2': transformador.valor_prueba_2,
+        'valor_prueba_3': transformador.valor_prueba_3,
+        'resistencia_aislamiento_megaoms': transformador.resistencia_aislamiento_megaoms,
+        'rigidez_dielecrica_kv': transformador.rigidez_dielecrica_kv,
+        'fecha_de_entrada_al_taller': transformador.fecha_de_entrada_al_taller,
+        'fecha_de_salida_del_taller': transformador.fecha_de_salida_del_taller,
+        'fecha_entrega_almacen': transformador.fecha_entrega_almacen,
+        'salida_mantenimiento': transformador.salida_mantenimiento,
+        'fecha_salida_mantenimiento': transformador.fecha_salida_mantenimiento,
+        'baja': transformador.baja,
+        'cargas': transformador.cargas,
+        'area_fecha_de_entrega_transformador_reparado': transformador.area_fecha_de_entrega_transformador_reparado,
+        'motivo': transformador.motivo,
+        'consecutivo': transformador.consecutivo,
+      };
+      
+      // 3. Enviar a mantenimiento con número automático
+      final result = await enviarAMantenimientoDesdeOtraPantalla(datosTransformador, motivo);
+      
       if (result == 200) {
-        // Marcar como enviado a mantenimiento en lugar de eliminar
-        final transformador = _transformadores.firstWhere((t) => t.id == id);
+        // 4. Marcar como enviado a mantenimiento en el transformador original
         transformador.enviadoMantenimiento = true;
         transformador.fechaEnvioMantenimiento = DateTime.now();
         notifyListeners();

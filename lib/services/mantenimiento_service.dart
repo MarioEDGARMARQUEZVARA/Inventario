@@ -11,6 +11,118 @@ import 'package:permission_handler/permission_handler.dart';
 
 FirebaseFirestore db = FirebaseFirestore.instance;
 
+/// Obtener el próximo número de mantenimiento disponible
+Future<int> _obtenerProximoNumeroMantenimiento() async {
+  final snapshot = await FirebaseFirestore.instance
+      .collection("mantenimiento2025")
+      .orderBy("numero_mantenimiento", descending: true)
+      .limit(1)
+      .get();
+  
+  if (snapshot.docs.isEmpty) {
+    return 1; // Primer mantenimiento
+  }
+  
+  final ultimoNumero = snapshot.docs.first.data()['numero_mantenimiento'] as int?;
+  return (ultimoNumero ?? 0) + 1;
+}
+
+/// Método para enviar a mantenimiento desde otras pantallas - VERSIÓN MEJORADA
+Future<int> enviarAMantenimientoDesdeOtraPantalla(Map<String, dynamic> datosTransformador, String motivo) async {
+  try {
+    final proximoNumero = await _obtenerProximoNumeroMantenimiento();
+    
+    // Función auxiliar para parsear fechas seguras
+    DateTime? _parsearFecha(dynamic fecha) {
+      if (fecha == null) return null;
+      if (fecha is DateTime) return fecha;
+      if (fecha is Timestamp) return fecha.toDate();
+      if (fecha is String) {
+        try {
+          return DateTime.parse(fecha);
+        } catch (e) {
+          return null;
+        }
+      }
+      return null;
+    }
+    
+    final mantenimiento = mantenimiento_model.Mantenimiento(
+      area: datosTransformador['area']?.toString() ?? datosTransformador['zona']?.toString() ?? '',
+      capacidadKVA: (datosTransformador['capacidadKVA'] is num) 
+          ? (datosTransformador['capacidadKVA'] as num).toDouble() 
+          : double.tryParse(datosTransformador['capacidadKVA']?.toString() ?? '') ?? 0.0,
+      economico: datosTransformador['economico']?.toString() ?? '',
+      estado: 'en mantenimiento',
+      fases: (datosTransformador['fases'] is int) 
+          ? datosTransformador['fases'] as int 
+          : int.tryParse(datosTransformador['fases']?.toString() ?? '') ?? 0,
+      fecha_de_entrada_al_taller: DateTime.now(),
+      fecha_prueba_1: DateTime.now(),
+      fecha_prueba_2: DateTime.now(),
+      fecha_de_alta: DateTime.now(),
+      fecha_de_salida_del_taller: null,
+      fecha_fabricacion: _parsearFecha(datosTransformador['fecha_fabricacion']) ?? 
+                        _parsearFecha(datosTransformador['fechaMovimiento']) ?? 
+                        DateTime.now(),
+      peso_placa_de_datos: datosTransformador['peso_placa_de_datos']?.toString() ?? '',
+      aceite: datosTransformador['aceite']?.toString() ?? '',
+      marca: datosTransformador['marca']?.toString() ?? '',
+      numero_mantenimiento: proximoNumero,
+      resistencia_aislamiento_megaoms: (datosTransformador['resistencia_aislamiento_megaoms'] is int) 
+          ? datosTransformador['resistencia_aislamiento_megaoms'] as int 
+          : int.tryParse(datosTransformador['resistencia_aislamiento_megaoms']?.toString() ?? '') ?? 0,
+      rigidez_dielecrica_kv: datosTransformador['rigidez_dielecrica_kv']?.toString() ?? '',
+      serie: datosTransformador['serie']?.toString() ?? '',
+      motivo: motivo,
+      enviadoMantenimiento: true,
+      fechaEnvioMantenimiento: DateTime.now(),
+      // Campos específicos de transformadores x zona
+      zona: datosTransformador['zona']?.toString(),
+      relacion: (datosTransformador['relacion'] is int) 
+          ? datosTransformador['relacion'] as int 
+          : int.tryParse(datosTransformador['relacion']?.toString() ?? ''),
+      fechaMovimiento: _parsearFecha(datosTransformador['fechaMovimiento']),
+      reparado: datosTransformador['reparado'] is bool ? datosTransformador['reparado'] as bool : null,
+      // Campos adicionales que pueden venir de transformadores actuales
+      mes: datosTransformador['mes']?.toString(),
+      consecutivo: (datosTransformador['consecutivo'] is int) 
+          ? datosTransformador['consecutivo'] as int 
+          : int.tryParse(datosTransformador['consecutivo']?.toString() ?? ''),
+      fecha_de_llegada: _parsearFecha(datosTransformador['fecha_de_llegada']),
+      fecha_entrega_almacen: _parsearFecha(datosTransformador['fecha_entrega_almacen']),
+      salida_mantenimiento: datosTransformador['salida_mantenimiento'] is bool 
+          ? datosTransformador['salida_mantenimiento'] as bool 
+          : null,
+      fecha_salida_mantenimiento: _parsearFecha(datosTransformador['fecha_salida_mantenimiento']),
+      baja: datosTransformador['baja'] is bool ? datosTransformador['baja'] as bool : null,
+      cargas: (datosTransformador['cargas'] is int) 
+          ? datosTransformador['cargas'] as int 
+          : int.tryParse(datosTransformador['cargas']?.toString() ?? ''),
+      area_fecha_de_entrega_transformador_reparado: datosTransformador['area_fecha_de_entrega_transformador_reparado']?.toString(),
+      // Campos de pruebas
+      valor_prueba_1: datosTransformador['valor_prueba_1']?.toString(),
+      valor_prueba_2: datosTransformador['valor_prueba_2']?.toString(),
+      valor_prueba_3: datosTransformador['valor_prueba_3']?.toString(),
+      rt_fase_a: (datosTransformador['rt_fase_a'] is num) 
+          ? (datosTransformador['rt_fase_a'] as num).toDouble() 
+          : double.tryParse(datosTransformador['rt_fase_a']?.toString() ?? ''),
+      rt_fase_b: (datosTransformador['rt_fase_b'] is num) 
+          ? (datosTransformador['rt_fase_b'] as num).toDouble() 
+          : double.tryParse(datosTransformador['rt_fase_b']?.toString() ?? ''),
+      rt_fase_c: (datosTransformador['rt_fase_c'] is num) 
+          ? (datosTransformador['rt_fase_c'] as num).toDouble() 
+          : double.tryParse(datosTransformador['rt_fase_c']?.toString() ?? ''),
+    );
+    
+    await db.collection("mantenimiento2025").add(mantenimiento.toJson());
+    return 200;
+  } catch (e) {
+    print("Error al enviar a mantenimiento: $e");
+    return 500;
+  }
+}
+
 /// Obtener lista de mantenimiento
 Future<List<mantenimiento_model.Mantenimiento>> getMantenimientos() async {
   QuerySnapshot query = await db.collection("mantenimiento2025").get();
@@ -140,9 +252,16 @@ Future<void> _enviarATransformadoresXZona(mantenimiento_model.Mantenimiento mant
 /// CRUD
 Future<int> addMantenimiento(mantenimiento_model.Mantenimiento m) async {
   try {
+    // Si no tiene número de mantenimiento, asignar uno automático
+    if (m.numero_mantenimiento == 0) {
+      final proximoNumero = await _obtenerProximoNumeroMantenimiento();
+      m.numero_mantenimiento = proximoNumero;
+    }
+    
     await db.collection("mantenimiento2025").add(m.toJson());
     return 200;
   } catch (e) {
+    print("Error al agregar mantenimiento: $e");
     return 500;
   }
 }
@@ -198,7 +317,7 @@ mantenimiento_model.Mantenimiento _createDefaultMantenimiento() {
     fecha_de_salida_del_taller: null,
     fecha_fabricacion: null,
     fecha_de_entrada_al_taller: null,
-    fecha_prueba: null, // CORREGIDO: era RangoFecha, ahora es DateTime?
+    fecha_prueba: null,
     peso_placa_de_datos: '',
     aceite: '',
     marca: '',
@@ -271,7 +390,7 @@ Future<void> exportMantenimientosToExcel(BuildContext context) async {
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 8, rowIndex: i + 1)).value = TextCellValue(item.aceite);
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 9, rowIndex: i + 1)).value = TextCellValue(item.peso_placa_de_datos);
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 10, rowIndex: i + 1)).value = TextCellValue(item.fecha_fabricacion?.toString() ?? '');
-    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 11, rowIndex: i + 1)).value = TextCellValue(item.fecha_prueba?.toString() ?? ''); // CORREGIDO
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 11, rowIndex: i + 1)).value = TextCellValue(item.fecha_prueba?.toString() ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 12, rowIndex: i + 1)).value = TextCellValue(item.rt_fase_a?.toString() ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 13, rowIndex: i + 1)).value = TextCellValue(item.rt_fase_b?.toString() ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 14, rowIndex: i + 1)).value = TextCellValue(item.rt_fase_c?.toString() ?? '');
