@@ -184,6 +184,7 @@ class _TransformadoresxzonaScreenState
                                   style: const TextStyle(
                                       color: Colors.black54, fontSize: 14),
                                 ),
+                                trailing: _buildMantenimientoInfo(pageItems[index].value),
                                 onTap: sessionProvider.showTimeoutDialog 
                                     ? null 
                                     : () {
@@ -312,11 +313,38 @@ class _TransformadoresxzonaScreenState
                           MaterialPageRoute(
                             builder: (_) => const TransformadoresxzonaAddScreen(),
                           ),
-                        );
+                        ).then((_) {
+                          // Recargar datos después de agregar
+                          setState(() {});
+                        });
                       },
                 child: const Icon(Icons.add, size: 32),
               ),
       ),
     );
+  }
+
+  // Widget para mostrar información de mantenimiento
+  Widget _buildMantenimientoInfo(List<TransformadoresXZona> transformadores) {
+    final totalEnvios = transformadores.fold(0, (sum, t) => sum + (t.contadorEnviosMantenimiento ?? 0));
+    
+    if (totalEnvios > 0) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.build, color: Colors.blue, size: 20),
+          const SizedBox(width: 4),
+          Text(
+            '$totalEnvios',
+            style: const TextStyle(
+              color: Colors.blue,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      );
+    }
+    return const SizedBox();
   }
 }

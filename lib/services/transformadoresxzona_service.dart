@@ -5,19 +5,23 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:excel/excel.dart';
 import 'package:permission_handler/permission_handler.dart';
+
 FirebaseFirestore db = FirebaseFirestore.instance;
 
 /// Obtener lista de transformadores por zona
 Future<List<TransformadoresXZona>> getTransformadoresxZona() async {
   QuerySnapshot query = await db.collection("Transformadoresxzona").get();
   return query.docs.map((doc) {
-    // Debug: mostrar estructura real del documento antes del fromMap
     try {
       final raw = doc.data();
       print('getTransformadoresxZona doc.id=${doc.id} data=$raw');
       final data = raw as Map<String, dynamic>? ?? <String, dynamic>{};
       var transformador = TransformadoresXZona.fromMap(data);
       transformador.id = doc.id;
+      
+      // Obtener contador de envíos a mantenimiento
+      transformador.contadorEnviosMantenimiento = data['contadorEnviosMantenimiento'] ?? 0;
+      
       return transformador;
     } catch (e) {
       print('getTransformadoresxZona parse error for doc ${doc.id}: $e');
@@ -35,12 +39,13 @@ Future<List<TransformadoresXZona>> getTransformadoresxZona() async {
         estado: '',
         fechaMovimiento: null,
         reparado: false,
+        contadorEnviosMantenimiento: 0,
       );
     }
   }).toList();
 }
 
-/// Enviar transformador a mantenimiento con motivo
+/// Enviar transformador a mantenimiento con motivo Y CONTADOR
 Future<int> enviarAMantenimientoZona(String id, String motivo) async {
   int code = 0;
   try {
@@ -50,24 +55,36 @@ Future<int> enviarAMantenimientoZona(String id, String motivo) async {
     if (doc.exists) {
       Map<String, dynamic>? data = doc.data();
 
-      // Guardamos también el origen
-      data!["origen"] = "Transformadoresxzona";
+      // Incrementar contador de envíos a mantenimiento
+      int contadorActual = data?['contadorEnviosMantenimiento'] ?? 0;
+      data!['contadorEnviosMantenimiento'] = contadorActual + 1;
+
+      // Guardar también el origen
+      data["origen"] = "Transformadoresxzona";
 
       DocumentReference newDoc =
           await db.collection("mantenimiento2025").add(data);
 
+      // Guardar motivo como subcolección
       await newDoc.collection("motivos").add({
         "motivo": motivo,
-        "fecha": FieldValue.serverTimestamp(), // <-- CORRECTO
+        "fecha": FieldValue.serverTimestamp(),
+        "numeroEnvio": contadorActual + 1, // Número de envío
       });
 
-      await db.collection("Transformadoresxzona").doc(id).delete();
+      // Actualizar el transformador con el nuevo contador
+      await db.collection("Transformadoresxzona").doc(id).update({
+        'contadorEnviosMantenimiento': contadorActual + 1,
+        'enviadoMantenimiento': true,
+        'fechaEnvioMantenimiento': FieldValue.serverTimestamp(),
+      });
 
       code = 200;
     } else {
       code = 404;
     }
   } catch (e) {
+    print("Error al enviar a mantenimiento: $e");
     code = 500;
   }
   return code;
@@ -76,7 +93,12 @@ Future<int> enviarAMantenimientoZona(String id, String motivo) async {
 /// CRUD
 Future<int> addTransformador(TransformadoresXZona tz) async {
   try {
-    await db.collection("Transformadoresxzona").add(tz.toJson());
+    // Inicializar contador de envíos a mantenimiento
+    final data = tz.toJson();
+    data['contadorEnviosMantenimiento'] = 0;
+    data['enviadoMantenimiento'] = false;
+    
+    await db.collection("Transformadoresxzona").add(data);
     return 200;
   } catch (_) {
     return 500;
@@ -101,7 +123,7 @@ Future<int> deleteTransformadorZona(String id) async {
   }
 }
 
-/// Stream
+/// Stream - ACTUALIZADO para incluir contador
 Stream<List<TransformadoresXZona>> transformadoresxzonaStream() {
   return db.collection("Transformadoresxzona").snapshots().map((snapshot) =>
       snapshot.docs.map((doc) {
@@ -111,6 +133,11 @@ Stream<List<TransformadoresXZona>> transformadoresxzonaStream() {
           final data = raw as Map<String, dynamic>? ?? <String, dynamic>{};
           var transformador = TransformadoresXZona.fromMap(data);
           transformador.id = doc.id;
+          
+          // Obtener contador de envíos a mantenimiento
+          transformador.contadorEnviosMantenimiento = data['contadorEnviosMantenimiento'] ?? 0;
+          transformador.enviadoMantenimiento = data['enviadoMantenimiento'] ?? false;
+          
           return transformador;
         } catch (e) {
           print('transformadoresxzonaStream parse error for doc ${doc.id}: $e');
@@ -128,12 +155,14 @@ Stream<List<TransformadoresXZona>> transformadoresxzonaStream() {
             estado: '',
             fechaMovimiento: null,
             reparado: false,
+            contadorEnviosMantenimiento: 0,
           );
         }
       }).toList());
 }
+
 Future<void> exportTransformadoresxzonaToExcel(BuildContext context) async {
-    var estado = await Permission.manageExternalStorage.request();
+  var estado = await Permission.manageExternalStorage.request();
   if (!estado.isGranted) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -142,10 +171,11 @@ Future<void> exportTransformadoresxzonaToExcel(BuildContext context) async {
     openAppSettings(); 
     return;
   }
+  
   var excel = Excel.createExcel();
   Sheet sheetObject = excel['Pagina 1'];
 
-  List<String> headers = ['Zona', 'Economico', 'Marca', 'capacidadKVA', 'Fase', 'Numero de Serie', 'aceite', 'Kilos', 'Relación', 'Status', 'Fecha de Movimiento', 'Reparado', 'Motivo'];
+  List<String> headers = ['Zona', 'Economico', 'Marca', 'capacidadKVA', 'Fase', 'Numero de Serie', 'aceite', 'Kilos', 'Relación', 'Status', 'Fecha de Movimiento', 'Reparado', 'Motivo', 'Veces en Mantenimiento'];
   for (int i = 0; i < headers.length; i++) {
     sheetObject
         .cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0))
@@ -169,9 +199,7 @@ Future<void> exportTransformadoresxzonaToExcel(BuildContext context) async {
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 10, rowIndex: i + 1)).value = TextCellValue(item.fechaMovimiento.toString() ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 11, rowIndex: i + 1)).value = TextCellValue(item.reparado.toString() ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 12, rowIndex: i + 1)).value = TextCellValue(item.motivo ?? '');
-
-    
-
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 13, rowIndex: i + 1)).value = TextCellValue(item.contadorEnviosMantenimiento?.toString() ?? '0');
   }
 
   String formattedDate = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
@@ -189,4 +217,3 @@ Future<void> exportTransformadoresxzonaToExcel(BuildContext context) async {
     );
   }
 }
-

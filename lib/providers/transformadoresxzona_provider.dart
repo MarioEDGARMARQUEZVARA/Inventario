@@ -43,7 +43,7 @@ class TransformadoresxZonaProvider extends ChangeNotifier {
 
     _filteredTransformadores = _allTransformadores.where((t) {
       switch (filter) {
-        case 'capacidadKVA':
+        case 'Capacidad':
           final cap = t.capacidadKVA;
           final range = value.split('-');
           final min = double.tryParse(range[0]) ?? 0;
@@ -98,8 +98,8 @@ class TransformadoresxZonaProvider extends ChangeNotifier {
     try {
       final result = await addTransformador(nuevo);
       if (result == 200) {
-        _allTransformadores.add(nuevo);
-        _filteredTransformadores = List.from(_allTransformadores);
+        // Recargar datos para incluir el nuevo registro
+        await fetchTransformadores(nuevo.zona);
         notifyListeners();
       }
     } catch (e) {
@@ -138,41 +138,24 @@ class TransformadoresxZonaProvider extends ChangeNotifier {
     }
   }
 
-  /// ✅ Enviar a mantenimiento CON NÚMERO AUTOMÁTICO Y TODOS LOS DATOS
+  /// ✅ Enviar a mantenimiento CON CONTADOR Y ACTUALIZACIÓN AUTOMÁTICA
   Future<int> enviarAMantenimientoProvider(String id, String motivo) async {
     try {
-      // 1. Buscar el transformador en la lista local
-      final transformador = _allTransformadores.firstWhere((t) => t.id == id);
-      
-      // 2. Preparar todos los datos del transformador
-      final datosTransformador = {
-        'area': transformador.zona, // En transformadores x zona, el área es la zona
-        'capacidadKVA': transformador.capacidadKVA,
-        'economico': transformador.economico.toString(),
-        'estado': transformador.estado,
-        'fases': transformador.fases,
-        'marca': transformador.marca,
-        'aceite': transformador.aceite,
-        'serie': transformador.serie,
-        'peso_placa_de_datos': transformador.peso_placa_de_datos,
-        'fecha_fabricacion': transformador.fechaMovimiento, // Usar fechaMovimiento como fecha de fabricación
-        'resistencia_aislamiento_megaoms': 0, // Valor por defecto
-        'rigidez_dielecrica_kv': '', // Valor por defecto
-        'zona': transformador.zona,
-        'relacion': transformador.relacion,
-        'fechaMovimiento': transformador.fechaMovimiento,
-        'reparado': transformador.reparado,
-        'motivo_original': transformador.motivo, // Guardar el motivo original
-      };
-      
-      // 3. Enviar a mantenimiento con número automático
-      final result = await enviarAMantenimientoDesdeOtraPantalla(datosTransformador, motivo);
+      // 1. Enviar a mantenimiento usando el servicio actualizado
+      final result = await enviarAMantenimientoZona(id, motivo);
       
       if (result == 200) {
-        // 4. Marcar como enviado a mantenimiento en el transformador original
-        transformador.enviadoMantenimiento = true;
-        transformador.fechaEnvioMantenimiento = DateTime.now();
-        notifyListeners();
+        // 2. Actualizar la lista local inmediatamente
+        final transformadorIndex = _allTransformadores.indexWhere((t) => t.id == id);
+        if (transformadorIndex != -1) {
+          // Incrementar contador localmente
+          _allTransformadores[transformadorIndex].contadorEnviosMantenimiento = 
+              (_allTransformadores[transformadorIndex].contadorEnviosMantenimiento ?? 0) + 1;
+          _allTransformadores[transformadorIndex].enviadoMantenimiento = true;
+          
+          _filteredTransformadores = List.from(_allTransformadores);
+          notifyListeners();
+        }
       }
       return result;
     } catch (e) {

@@ -96,46 +96,56 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
     return snapshot.docs.length + 1;
   }
 
-  Future<void> _guardarTransformador() async {
-    final consecutivo = await _getConsecutivo();
-    final aceite = '${aceiteController.text.trim()} LTS';
-    final pesoPlaca = '${pesoPlacaController.text.trim()} KGS';
-    // CAMBIO: Convertir "Sí"/"No" a boolean
-    final baja = bajaSeleccionada == 'Sí';
+// Reemplaza el método _guardarTransformador() completo:
+Future<void> _guardarTransformador() async {
+  final consecutivo = await _getConsecutivo();
+  final aceite = '${aceiteController.text.trim()} LTS';
+  final pesoPlaca = '${pesoPlacaController.text.trim()} KGS';
+  final baja = bajaSeleccionada == 'Sí';
 
-    final transformador = Tranformadoresactuales(
-      area: areaController.text,
-      consecutivo: consecutivo,
-      fecha_de_llegada: fechaDeLlegada,
-      mes: mesSeleccionado ?? '',
-      marca: marcaController.text,
-      aceite: aceite,
-      economico: economicoController.text,
-      capacidadKVA: double.tryParse(capacidadKVAController.text) ?? 0,
-      fases: int.tryParse(fasesController.text) ?? 0,
-      serie: serieController.text,
-      peso_placa_de_datos: pesoPlaca,
-      fecha_fabricacion: fechaFabricacion,
-      fecha_prueba: fechaPrueba,
-      valor_prueba_1: valorPrueba1Controller.text,
-      valor_prueba_2: valorPrueba2Controller.text,
-      valor_prueba_3: valorPrueba3Controller.text,
-      resistencia_aislamiento_megaoms: int.tryParse(resistenciaAislamientoController.text) ?? 0,
-      rigidez_dielecrica_kv: rigidezDielecricaController.text,
-      estado: estadoController.text,
-      fecha_de_entrada_al_taller: fechaEntradaTaller,
-      fecha_de_salida_del_taller: fechaSalidaTaller,
-      fecha_entrega_almacen: fechaEntregaAlmacen,
-      salida_mantenimiento: salidaMantenimiento,
-      fecha_salida_mantenimiento: salidaMantenimiento ? fechaSalidaMantenimiento : null,
-      baja: baja, // CAMBIO: Usar el valor convertido
-      cargas: int.tryParse(cargasController.text) ?? 0,
-      area_fecha_de_entrega_transformador_reparado: areaEntregaReparadoController.text,
-      motivo: salidaMantenimiento ? motivoController.text : null,
-    );
+  final transformador = Tranformadoresactuales(
+    area: areaController.text,
+    consecutivo: consecutivo,
+    fecha_de_llegada: fechaDeLlegada,
+    mes: mesSeleccionado ?? '',
+    marca: marcaController.text,
+    aceite: aceite,
+    economico: economicoController.text,
+    capacidadKVA: double.tryParse(capacidadKVAController.text) ?? 0,
+    fases: int.tryParse(fasesController.text) ?? 0,
+    serie: serieController.text,
+    peso_placa_de_datos: pesoPlaca,
+    fecha_fabricacion: fechaFabricacion,
+    fecha_prueba: fechaPrueba,
+    valor_prueba_1: valorPrueba1Controller.text,
+    valor_prueba_2: valorPrueba2Controller.text,
+    valor_prueba_3: valorPrueba3Controller.text,
+    resistencia_aislamiento_megaoms: int.tryParse(resistenciaAislamientoController.text) ?? 0,
+    rigidez_dielecrica_kv: rigidezDielecricaController.text,
+    estado: estadoController.text,
+    fecha_de_entrada_al_taller: fechaEntradaTaller,
+    fecha_de_salida_del_taller: fechaSalidaTaller,
+    fecha_entrega_almacen: fechaEntregaAlmacen,
+    salida_mantenimiento: salidaMantenimiento,
+    fecha_salida_mantenimiento: salidaMantenimiento ? fechaSalidaMantenimiento : null,
+    baja: baja,
+    cargas: int.tryParse(cargasController.text) ?? 0,
+    area_fecha_de_entrega_transformador_reparado: areaEntregaReparadoController.text,
+    motivo: salidaMantenimiento ? motivoController.text : null,
+    contadorEnviosMantenimiento: 0, // INICIALIZAR CONTADOR EN 0
+  );
 
-    await addTransformador(transformador);
-  }
+  await addTransformador(transformador);
+  
+  // Mostrar mensaje de éxito
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('Transformador agregado correctamente')),
+  );
+  
+  // Regresar a la pantalla anterior
+  Navigator.pop(context);
+}
 
   Widget _buildNormalContent() {
     return Scaffold(

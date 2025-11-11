@@ -104,6 +104,8 @@ class Mantenimiento {
   String? area_fecha_de_entrega_transformador_reparado;
   DateTime? fechaReparacion;
   String? destinoReparado;
+  // NUEVO CAMPO: Contador de veces que ha sido reparado
+  int contadorReparaciones;
 
   Mantenimiento({
     this.id = '',
@@ -154,6 +156,7 @@ class Mantenimiento {
     this.area_fecha_de_entrega_transformador_reparado,
     this.fechaReparacion,
     this.destinoReparado,
+    this.contadorReparaciones = 0, // INICIALIZADO EN 0
   });
 
   factory Mantenimiento.fromMap(Map<String, dynamic> map) {
@@ -200,12 +203,12 @@ class Mantenimiento {
           return int.tryParse(v?.toString() ?? '0') ?? 0;
         })(),
         mes: _parseString(get(map, ['Mes', 'mes'])),
-            enviadoMantenimiento: (() {
-        final v = get(map, ['enviadoMantenimiento']);
-        if (v is bool) return v;
-        return v?.toString() == 'true';
-      })(),
-      fechaEnvioMantenimiento: _parseFecha(get(map, ['fechaEnvioMantenimiento'])),
+        enviadoMantenimiento: (() {
+          final v = get(map, ['enviadoMantenimiento']);
+          if (v is bool) return v;
+          return v?.toString() == 'true';
+        })(),
+        fechaEnvioMantenimiento: _parseFecha(get(map, ['fechaEnvioMantenimiento'])),
         fecha_de_llegada: _parseFecha(get(map, ['Fecha_de_llegada', 'fecha_de_llegada'])) ?? DateTime(1900),  
         consecutivo: (() {
           final v = get(map, ['Consecutivo', 'consecutivo']);
@@ -283,6 +286,13 @@ class Mantenimiento {
         area_fecha_de_entrega_transformador_reparado: _parseString(get(map, ['Aerea_fecha_de_entrega_transformador_reparado', 'area_fecha_de_entrega_transformador_reparado'])),
         fechaReparacion: _parseFecha(get(map, ['fechaReparacion'])),
         destinoReparado: _parseString(get(map, ['destinoReparado'])),
+        // NUEVO: Contador de reparaciones - CORREGIDO PARA ASEGURAR QUE SIEMPRE TENGA VALOR
+        contadorReparaciones: (() {
+          final v = get(map, ['contadorReparaciones']);
+          if (v is int) return v;
+          return int.tryParse(v?.toString() ?? '0') ?? 0;
+        })(),
+   
       );
     } catch (e) {
       print('Mantenimiento.fromMap parse error: $e -- map: $map');
@@ -309,6 +319,7 @@ class Mantenimiento {
         resistencia_aislamiento_megaoms: 0,
         rigidez_dielecrica_kv: '',
         serie: '',
+        contadorReparaciones: 0,
       );
     }
   }
@@ -360,7 +371,9 @@ class Mantenimiento {
       'fechaReparacion': fechaReparacion,
       'destinoReparado': destinoReparado,
       'enviadoMantenimiento': enviadoMantenimiento,
-    'fechaEnvioMantenimiento': fechaEnvioMantenimiento,
+      'fechaEnvioMantenimiento': fechaEnvioMantenimiento,
+      // NUEVO: Contador de reparaciones
+      'contadorReparaciones': contadorReparaciones,
     };
     if (motivos != null) {
       json['Motivos'] = motivos!.map((m) => m.toJson()).toList();

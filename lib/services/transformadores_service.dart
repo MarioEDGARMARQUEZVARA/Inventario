@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:excel/excel.dart';
+
 FirebaseFirestore db = FirebaseFirestore.instance;
 
 /// Obtener lista de transformadores actuales
@@ -18,6 +19,11 @@ Future<List<Tranformadoresactuales>> getTranformadoresActuales() async {
       final data = raw as Map<String, dynamic>? ?? <String, dynamic>{};
       var transformador = Tranformadoresactuales.fromMap(data);
       transformador.id = doc.id;
+      
+      // Obtener contador de envíos a mantenimiento
+      transformador.contadorEnviosMantenimiento = data['contadorEnviosMantenimiento'] ?? 0;
+      transformador.enviadoMantenimiento = data['enviadoMantenimiento'] ?? false;
+      
       return transformador;
     } catch (e) {
       print('getTranformadoresActuales parse error for doc ${doc.id}: $e');
@@ -49,12 +55,13 @@ Future<List<Tranformadoresactuales>> getTranformadoresActuales() async {
         baja: false,
         cargas: 0,
         area_fecha_de_entrega_transformador_reparado: '',
+        contadorEnviosMantenimiento: 0,
       );
     }
   }).toList();
 }
 
-/// Enviar transformador a mantenimiento con motivo
+/// Enviar transformador a mantenimiento con motivo Y CONTADOR
 Future<int> enviarAMantenimiento(String id, String motivo) async {
   int code = 0;
   try {
@@ -64,27 +71,39 @@ Future<int> enviarAMantenimiento(String id, String motivo) async {
     if (doc.exists) {
       Map<String, dynamic>? data = doc.data();
 
-      // Guardamos también el origen
-      data!["origen"] = "transformadores2025";
+      // Obtener contador actual de envíos a mantenimiento
+      int contadorActual = data?['contadorEnviosMantenimiento'] ?? 0;
+      
+      // Incrementar contador
+      data!['contadorEnviosMantenimiento'] = contadorActual + 1;
+
+      // Guardar también el origen
+      data["origen"] = "transformadores2025";
 
       // Copiar registro a mantenimiento
       DocumentReference newDoc =
           await db.collection("mantenimiento2025").add(data);
 
-      // Guardar motivo como subcolección
+      // Guardar motivo como subcolección con número de envío
       await newDoc.collection("motivos").add({
         "motivo": motivo,
         "fecha": DateTime.now(),
+        "numeroEnvio": contadorActual + 1, // Número de envío
       });
 
-      // Eliminar de transformadores actuales
-      await db.collection("transformadores2025").doc(id).delete();
+      // NO eliminar de transformadores actuales, solo actualizar contador
+      await db.collection("transformadores2025").doc(id).update({
+        'contadorEnviosMantenimiento': contadorActual + 1,
+        'enviadoMantenimiento': true,
+        'fechaEnvioMantenimiento': FieldValue.serverTimestamp(),
+      });
 
       code = 200;
     } else {
       code = 404;
     }
   } catch (e) {
+    print("Error al enviar a mantenimiento: $e");
     code = 500;
   }
   return code;
@@ -93,7 +112,12 @@ Future<int> enviarAMantenimiento(String id, String motivo) async {
 /// CRUD
 Future<int> addTransformador(Tranformadoresactuales ta) async {
   try {
-    await db.collection("transformadores2025").add(ta.toJson());
+    // Inicializar contador de envíos a mantenimiento
+    final data = ta.toJson();
+    data['contadorEnviosMantenimiento'] = 0;
+    data['enviadoMantenimiento'] = false;
+    
+    await db.collection("transformadores2025").add(data);
     return 200;
   } catch (_) {
     return 500;
@@ -118,7 +142,7 @@ Future<int> deleteTransformadorActual(String id) async {
   }
 }
 
-/// Stream
+/// Stream - ACTUALIZADO para incluir contador
 Stream<List<Tranformadoresactuales>> transformadoresActualesStream() {
   return db.collection("transformadores2025").snapshots().map((snapshot) =>
       snapshot.docs.map((doc) {
@@ -128,6 +152,11 @@ Stream<List<Tranformadoresactuales>> transformadoresActualesStream() {
           final data = raw as Map<String, dynamic>? ?? <String, dynamic>{};
           var transformador = Tranformadoresactuales.fromMap(data);
           transformador.id = doc.id;
+          
+          // Obtener contador de envíos a mantenimiento
+          transformador.contadorEnviosMantenimiento = data['contadorEnviosMantenimiento'] ?? 0;
+          transformador.enviadoMantenimiento = data['enviadoMantenimiento'] ?? false;
+          
           return transformador;
         } catch (e) {
           print('transformadoresActualesStream parse error for doc ${doc.id}: $e');
@@ -159,12 +188,14 @@ Stream<List<Tranformadoresactuales>> transformadoresActualesStream() {
             baja: false,
             cargas: 0,
             area_fecha_de_entrega_transformador_reparado: '',
+            contadorEnviosMantenimiento: 0,
           );
         }
       }).toList());
 }
+
 Future<void> exportTransformadoresToExcel(BuildContext context) async {
-    var status = await Permission.manageExternalStorage.request();
+  var status = await Permission.manageExternalStorage.request();
   if (!status.isGranted) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -173,10 +204,42 @@ Future<void> exportTransformadoresToExcel(BuildContext context) async {
     openAppSettings(); // abrir ajustes si el usuario lo deniega
     return;
   }
+  
   var excel = Excel.createExcel();
   Sheet sheetObject = excel['Pagina 1'];
 
-  List<String> headers = ['Consecutivo', 'Fecha de llegada','Mes', 'Área', 'Económico', 'Marca', 'Capacidad KVA', 'Fases', 'Serie', 'Aceite', 'Peso en placa de datos', 'Fecha de fabricación', 'Fecha de prueba', 'Valor Prueba 1', 'Valor prueba 2', 'Valor prueba 3', 'Resistencia de aislamiento de megaohms', 'Rigidez dieléctrica kv', 'Estado', 'Fecha de entrada al taller', 'Fecha de salida del taller', 'Area a la que se entrega transformador reparado y fecha','Fecha de entrega al almacen','Salida a mantenimiento mayor','Fecha de salida a mantenimiento mayor','Baja','Cargas','Motivo'];
+  List<String> headers = [
+    'Consecutivo', 
+    'Fecha de llegada',
+    'Mes', 
+    'Área', 
+    'Económico', 
+    'Marca', 
+    'Capacidad KVA', 
+    'Fases', 
+    'Serie', 
+    'Aceite', 
+    'Peso en placa de datos', 
+    'Fecha de fabricación', 
+    'Fecha de prueba', 
+    'Valor Prueba 1', 
+    'Valor prueba 2', 
+    'Valor prueba 3', 
+    'Resistencia de aislamiento de megaohms', 
+    'Rigidez dieléctrica kv', 
+    'Estado', 
+    'Fecha de entrada al taller', 
+    'Fecha de salida del taller', 
+    'Area a la que se entrega transformador reparado y fecha',
+    'Fecha de entrega al almacen',
+    'Salida a mantenimiento mayor',
+    'Fecha de salida a mantenimiento mayor',
+    'Baja',
+    'Cargas',
+    'Motivo',
+    'Veces en Mantenimiento' // NUEVO CAMPO
+  ];
+  
   for (int i = 0; i < headers.length; i++) {
     sheetObject
         .cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0))
@@ -215,14 +278,13 @@ Future<void> exportTransformadoresToExcel(BuildContext context) async {
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 25, rowIndex: i + 1)).value = TextCellValue(item.baja.toString());
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 26, rowIndex: i + 1)).value = TextCellValue(item.cargas?.toString() ?? '');  
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 27, rowIndex: i + 1)).value = TextCellValue(item.motivo ?? '');
-
-    
-
+    // NUEVO CAMPO: Contador de envíos a mantenimiento
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 28, rowIndex: i + 1)).value = TextCellValue(item.contadorEnviosMantenimiento?.toString() ?? '0');
   }
 
   String formattedDate = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
   String filePath =
-      '/storage/emulated/0/Download/treansformadores_2025_$formattedDate.xlsx';
+      '/storage/emulated/0/Download/transformadores_2025_$formattedDate.xlsx';
 
   List<int>? fileBytes = excel.save();
   if (fileBytes != null) {
@@ -231,8 +293,7 @@ Future<void> exportTransformadoresToExcel(BuildContext context) async {
       ..writeAsBytesSync(fileBytes);
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('El excel ha sido guardado en: $filePath')),
+      SnackBar(content: Text('Archivo Excel guardado en: $filePath')),
     );
   }
 }
-

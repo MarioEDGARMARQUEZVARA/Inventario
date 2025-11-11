@@ -155,7 +155,6 @@ class _Transformadores2025ScreenState
   }
 
   String _mapFilterValue(String filterType, String value) {
-    // Mapea el valor seleccionado al formato esperado por el provider
     return value;
   }
 
@@ -291,9 +290,23 @@ class _Transformadores2025ScreenState
                           style: const TextStyle(
                               color: Colors.grey, fontSize: 14),
                         ),
-                        // AGREGAR ICONO DE HERRAMIENTA AZUL SI FUE ENVIADO A MANTENIMIENTO
-                        trailing: t.enviadoMantenimiento 
-                            ? const Icon(Icons.build, color: Colors.blue, size: 24)
+                        // AGREGAR ICONO DE HERRAMIENTA AZUL Y CONTADOR SI FUE ENVIADO A MANTENIMIENTO
+                        trailing: t.contadorEnviosMantenimiento != null && t.contadorEnviosMantenimiento! > 0
+                            ? Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.build, color: Colors.blue, size: 24),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${t.contadorEnviosMantenimiento}',
+                                    style: const TextStyle(
+                                      color: Colors.blue,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              )
                             : null,
                         onTap: sessionProvider.showTimeoutDialog 
                             ? null 
@@ -314,7 +327,7 @@ class _Transformadores2025ScreenState
               onPressed: sessionProvider.showTimeoutDialog 
                   ? null 
                   : () async {
-                      exportTransformadoresToExcel(context);
+                      await exportTransformadoresToExcel(context);
                     },
               style: ElevatedButton.styleFrom(
                 backgroundColor: sessionProvider.showTimeoutDialog 
@@ -418,7 +431,10 @@ class _Transformadores2025ScreenState
                             MaterialPageRoute(
                               builder: (_) => const TransformadoresActualesAddScreen(),
                             ),
-                          );
+                          ).then((_) {
+                            final provider = context.read<Transformadores2025Provider>();
+                            provider.fetchTransformadores();
+                          });
                         },
                   child: const Icon(Icons.add, size: 32),
                 ),

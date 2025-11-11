@@ -239,10 +239,52 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
                           style:
                               const TextStyle(color: Colors.grey, fontSize: 14),
                         ),
-                        // AGREGAR ICONO DE PALOMITA SI ESTÁ REPARADO
-                        trailing: m.estado.toLowerCase() == "reparado" 
-                            ? const Icon(Icons.check_circle, color: Colors.green, size: 24)
-                            : null,
+                        // AGREGAR ICONO DE PALOMITA Y CONTADOR SI ESTÁ REPARADO - CORREGIDO
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Mostrar contador de envíos a mantenimiento si existe
+                            if (m.contador > 0)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8.0),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.build, color: Colors.blue, size: 16),
+                                    const SizedBox(width: 2),
+                                    Text(
+                                      '${m.contador}',
+                                      style: const TextStyle(
+                                        color: Colors.blue,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            // Mostrar icono de palomita y contador de reparaciones - CORREGIDO
+                            if (m.estado.toLowerCase() == "reparado") 
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.check_circle, color: Colors.green, size: 24),
+                                  if (m.contadorReparaciones > 0)
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 4.0),
+                                      child: Text(
+                                        '${m.contadorReparaciones}',
+                                        style: const TextStyle(
+                                          color: Colors.green,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                          ],
+                        ),
                         onTap: sessionProvider.showTimeoutDialog 
                             ? null 
                             : () {

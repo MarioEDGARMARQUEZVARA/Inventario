@@ -201,60 +201,71 @@ class _MantenimientoOperationsScreenState extends State<MantenimientoOperationsS
 
             const SizedBox(height: 24),
 
-            // Eliminar
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                onPressed: () async {
-                  final confirmar = await eliminarDialog(context);
-                  if (confirmar == true) {
-                    await provider.deleteMantenimientoProvider(widget.mantenimiento.id ?? '');
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Mantenimiento eliminado')),
-                    );
-                    Navigator.pop(context);
-                  }
-                },
-                child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
-              ),
-            ),
-            const SizedBox(height: 12),
+            // BOTONES - SOLO CAMBIO EN LA LÓGICA DE VISIBILIDAD
 
-            // Actualizar
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF2A1AFF)),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => MantenimientoUpdateScreen(mantenimiento: widget.mantenimiento),
-                    ),
-                  ).then((_) {
-                    provider.refreshData();
-                  });
-                },
-                child: const Text('Actualizar', style: TextStyle(color: Colors.white)),
+            // Eliminar - SOLO SI NO ESTÁ EN MANTENIMIENTO
+            if (widget.mantenimiento.estado.toLowerCase() != "en mantenimiento")
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  onPressed: () async {
+                    final confirmar = await eliminarDialog(context);
+                    if (confirmar == true) {
+                      await provider.deleteMantenimientoProvider(widget.mantenimiento.id ?? '');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Mantenimiento eliminado')),
+                      );
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
 
-            // Exportar
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                onPressed: () async {
-                  await exportMantenimientosToExcel(context);
-                },
-                child: const Text('Exportar a xlsx', style: TextStyle(color: Colors.white)),
+            if (widget.mantenimiento.estado.toLowerCase() != "en mantenimiento")
+              const SizedBox(height: 12),
+
+            // Actualizar - SOLO SI NO ESTÁ EN MANTENIMIENTO
+            if (widget.mantenimiento.estado.toLowerCase() != "en mantenimiento")
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF2A1AFF)),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => MantenimientoUpdateScreen(mantenimiento: widget.mantenimiento),
+                      ),
+                    ).then((_) {
+                      provider.refreshData();
+                    });
+                  },
+                  child: const Text('Actualizar', style: TextStyle(color: Colors.white)),
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
 
-            // Marcar como reparado - SOLO SI NO ESTÁ REPARADO
+            if (widget.mantenimiento.estado.toLowerCase() != "en mantenimiento")
+              const SizedBox(height: 12),
+
+            // Exportar - SOLO SI NO ESTÁ EN MANTENIMIENTO
+            if (widget.mantenimiento.estado.toLowerCase() != "en mantenimiento")
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                  onPressed: () async {
+                    await exportMantenimientosToExcel(context);
+                  },
+                  child: const Text('Exportar a xlsx', style: TextStyle(color: Colors.white)),
+                ),
+              ),
+
+            if (widget.mantenimiento.estado.toLowerCase() != "en mantenimiento")
+              const SizedBox(height: 12),
+
+            // Marcar como reparado - SOLO SI NO ESTÁ REPARADO Y ESTÁ EN MANTENIMIENTO
             if (widget.mantenimiento.estado.toLowerCase() != "reparado")
               SizedBox(
                 width: double.infinity,
@@ -314,13 +325,16 @@ class _MantenimientoOperationsScreenState extends State<MantenimientoOperationsS
   Widget _buildButtonList() {
     return Column(
       children: [
-        _buildDisabledButton('Reparado', Colors.cyan),
+        if (widget.mantenimiento.estado.toLowerCase() != "reparado")
+          _buildDisabledButton('Marcar como Reparado', Colors.cyan),
         const SizedBox(height: 12),
-        _buildDisabledButton('Eliminar', Colors.red),
-        const SizedBox(height: 12),
-        _buildDisabledButton('Actualizar', Color(0xFF2A1AFF)),
-        const SizedBox(height: 12),
-        _buildDisabledButton('Exportar a xlsx', Colors.green),
+        if (widget.mantenimiento.estado.toLowerCase() != "en mantenimiento") ...[
+          _buildDisabledButton('Eliminar', Colors.red),
+          const SizedBox(height: 12),
+          _buildDisabledButton('Actualizar', Color(0xFF2A1AFF)),
+          const SizedBox(height: 12),
+          _buildDisabledButton('Exportar a xlsx', Colors.green),
+        ],
       ],
     );
   }

@@ -293,11 +293,25 @@ class _TransformadoresxzonaMembersScreenState
                                                   ],
                                                 ),
                                               ),
-                                              // AGREGAR ICONO DE HERRAMIENTA AZUL SI FUE ENVIADO A MANTENIMIENTO
-                                              if (t.enviadoMantenimiento)
-                                                const Padding(
-                                                  padding: EdgeInsets.only(left: 8.0),
-                                                  child: Icon(Icons.build, color: Colors.blue, size: 24),
+                                              // AGREGAR ICONO DE HERRAMIENTA AZUL Y CONTADOR SI FUE ENVIADO A MANTENIMIENTO
+                                              if (t.contadorEnviosMantenimiento != null && t.contadorEnviosMantenimiento! > 0)
+                                                Padding(
+                                                  padding: const EdgeInsets.only(left: 8.0),
+                                                  child: Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      const Icon(Icons.build, color: Colors.blue, size: 24),
+                                                      const SizedBox(width: 4),
+                                                      Text(
+                                                        '${t.contadorEnviosMantenimiento}',
+                                                        style: const TextStyle(
+                                                          color: Colors.blue,
+                                                          fontWeight: FontWeight.bold,
+                                                          fontSize: 14,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
                                                 ),
                                             ],
                                           ),
@@ -381,7 +395,11 @@ class _TransformadoresxzonaMembersScreenState
                           MaterialPageRoute(
                             builder: (_) => TransformadoresxzonaAddScreen(zona: widget.zona),
                           ),
-                        );
+                        ).then((_) {
+                          // Recargar datos después de agregar
+                          final provider = context.read<TransformadoresxZonaProvider>();
+                          provider.fetchTransformadores(widget.zona);
+                        });
                       },
                 child: const Icon(Icons.add, size: 32),
               ),

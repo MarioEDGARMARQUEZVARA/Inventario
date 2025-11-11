@@ -50,6 +50,8 @@ class Tranformadoresactuales {
   List<Motivo>? motivos;
   bool enviadoMantenimiento;
   DateTime? fechaEnvioMantenimiento;
+  // NUEVO CAMPO: Contador de veces enviado a mantenimiento
+  int contadorEnviosMantenimiento;
 
   Tranformadoresactuales({
     this.id,
@@ -84,6 +86,7 @@ class Tranformadoresactuales {
     this.motivos,
     this.enviadoMantenimiento = false,
     this.fechaEnvioMantenimiento,
+    this.contadorEnviosMantenimiento = 0, // INICIALIZADO EN 0
   });
 
   factory Tranformadoresactuales.fromMap(Map<String, dynamic> map) {
@@ -165,6 +168,12 @@ class Tranformadoresactuales {
           return v?.toString() == 'true';
         })(),
         fechaEnvioMantenimiento: _parseFecha(get(map, ['fechaEnvioMantenimiento'])),
+        // NUEVO: Contador de envíos a mantenimiento
+        contadorEnviosMantenimiento: (() {
+          final v = get(map, ['contadorEnviosMantenimiento']);
+          if (v is int) return v;
+          return int.tryParse(v?.toString() ?? '0') ?? 0;
+        })(),
       );
     } catch (e) {
       print('Tranformadoresactuales.fromMap parse error: $e -- map: $map');
@@ -198,6 +207,7 @@ class Tranformadoresactuales {
         area_fecha_de_entrega_transformador_reparado: '',
         enviadoMantenimiento: false,
         fechaEnvioMantenimiento: null,
+        contadorEnviosMantenimiento: 0,
       );
     }
   }
@@ -234,6 +244,8 @@ class Tranformadoresactuales {
       'Motivo': motivo,
       'enviadoMantenimiento': enviadoMantenimiento,
       'fechaEnvioMantenimiento': fechaEnvioMantenimiento,
+      // NUEVO: Contador de envíos a mantenimiento
+      'contadorEnviosMantenimiento': contadorEnviosMantenimiento,
     };
     if (motivos != null) {
       json['Motivos'] = motivos!.map((m) => m.toJson()).toList();

@@ -27,7 +27,7 @@ Future<int> _obtenerProximoNumeroMantenimiento() async {
   return (ultimoNumero ?? 0) + 1;
 }
 
-/// Método para enviar a mantenimiento desde otras pantallas - VERSIÓN MEJORADA
+/// Método para enviar a mantenimiento desde otras pantallas - VERSIÓN MEJORADA CON CONTADORES
 Future<int> enviarAMantenimientoDesdeOtraPantalla(Map<String, dynamic> datosTransformador, String motivo) async {
   try {
     final proximoNumero = await _obtenerProximoNumeroMantenimiento();
@@ -46,6 +46,9 @@ Future<int> enviarAMantenimientoDesdeOtraPantalla(Map<String, dynamic> datosTran
       }
       return null;
     }
+    
+    // Obtener contador actual de envíos a mantenimiento
+    int contadorActual = datosTransformador['contadorEnviosMantenimiento'] ?? 0;
     
     final mantenimiento = mantenimiento_model.Mantenimiento(
       area: datosTransformador['area']?.toString() ?? datosTransformador['zona']?.toString() ?? '',
@@ -68,7 +71,7 @@ Future<int> enviarAMantenimientoDesdeOtraPantalla(Map<String, dynamic> datosTran
       peso_placa_de_datos: datosTransformador['peso_placa_de_datos']?.toString() ?? '',
       aceite: datosTransformador['aceite']?.toString() ?? '',
       marca: datosTransformador['marca']?.toString() ?? '',
-      numero_mantenimiento: proximoNumero,
+      numero_mantenimiento: proximoNumero, // ASIGNAR NÚMERO AUTOMÁTICO
       resistencia_aislamiento_megaoms: (datosTransformador['resistencia_aislamiento_megaoms'] is int) 
           ? datosTransformador['resistencia_aislamiento_megaoms'] as int 
           : int.tryParse(datosTransformador['resistencia_aislamiento_megaoms']?.toString() ?? '') ?? 0,
@@ -113,6 +116,8 @@ Future<int> enviarAMantenimientoDesdeOtraPantalla(Map<String, dynamic> datosTran
       rt_fase_c: (datosTransformador['rt_fase_c'] is num) 
           ? (datosTransformador['rt_fase_c'] as num).toDouble() 
           : double.tryParse(datosTransformador['rt_fase_c']?.toString() ?? ''),
+      // NUEVO: Incluir contador de envíos
+      contador: contadorActual + 1,
     );
     
     await db.collection("mantenimiento2025").add(mantenimiento.toJson());
@@ -141,7 +146,7 @@ Future<List<mantenimiento_model.Mantenimiento>> getMantenimientos() async {
   }).toList();
 }
 
-/// Marcar como reparado y enviar a destino adaptándose al modelo correspondiente
+/// Marcar como reparado y enviar a destino adaptándose al modelo correspondiente CON CONTADOR
 Future<int> marcarReparado(String id, {String? destinoManual, mantenimiento_model.Mantenimiento? mantenimiento}) async {
   int code = 0;
   try {
@@ -161,13 +166,17 @@ Future<int> marcarReparado(String id, {String? destinoManual, mantenimiento_mode
       return 404; // No encontrado
     }
 
+    // Obtener contador actual de reparaciones
+    int contadorReparaciones = datosMantenimiento.contadorReparaciones;
+
     final destino = destinoManual ?? "transformadores2025";
 
-    // 1. Marcar como reparado en mantenimiento
+    // 1. Marcar como reparado en mantenimiento CON CONTADOR
     await db.collection("mantenimiento2025").doc(id).update({
       "estado": "reparado",
       "fechaReparacion": Timestamp.now(),
       "destinoReparado": destino,
+      "contadorReparaciones": contadorReparaciones + 1, // INCREMENTAR CONTADOR
     });
 
     // 2. Preparar datos según el destino
@@ -177,6 +186,9 @@ Future<int> marcarReparado(String id, {String? destinoManual, mantenimiento_mode
       await _enviarATransformadoresXZona(datosMantenimiento);
     }
 
+    // 3. Eliminar el mantenimiento después de enviarlo a su destino
+    await db.collection("mantenimiento2025").doc(id).delete();
+
     code = 200;
   } catch (e) {
     print("Error al marcar como reparado: $e");
@@ -185,68 +197,117 @@ Future<int> marcarReparado(String id, {String? destinoManual, mantenimiento_mode
   return code;
 }
 
-/// Enviar a Transformadores Actuales (modelo Tranformadoresactuales)
+/// Enviar a Transformadores Actuales (modelo Tranformadoresactuales) CON CONTADOR - MEJORADO
 Future<void> _enviarATransformadoresActuales(mantenimiento_model.Mantenimiento mantenimiento) async {
-  final consecutivo = await _obtenerNuevoConsecutivo();
-  
-  final transformadorActual = Tranformadoresactuales(
-    area: mantenimiento.area,
-    consecutivo: consecutivo,
-    fecha_de_llegada: mantenimiento.fecha_de_entrada_al_taller ?? DateTime.now(),
-    mes: mantenimiento.mes ?? _obtenerMesActual(),
-    marca: mantenimiento.marca,
-    aceite: mantenimiento.aceite,
-    economico: mantenimiento.economico,
-    capacidadKVA: mantenimiento.capacidadKVA ?? 0.0,
-    fases: mantenimiento.fases,
-    serie: mantenimiento.serie,
-    peso_placa_de_datos: mantenimiento.peso_placa_de_datos,
-    fecha_fabricacion: mantenimiento.fecha_fabricacion ?? DateTime.now(),
-    fecha_prueba: DateTime.now(),
-    valor_prueba_1: mantenimiento.valor_prueba_1 ?? '',
-    valor_prueba_2: mantenimiento.valor_prueba_2 ?? '',
-    valor_prueba_3: mantenimiento.valor_prueba_3 ?? '',
-    resistencia_aislamiento_megaoms: mantenimiento.resistencia_aislamiento_megaoms,
-    rigidez_dielecrica_kv: mantenimiento.rigidez_dielecrica_kv,
-    estado: "reparado",
-    fecha_de_entrada_al_taller: mantenimiento.fecha_de_entrada_al_taller ?? DateTime.now(),
-    fecha_de_salida_del_taller: mantenimiento.fecha_de_salida_del_taller ?? DateTime.now(),
-    fecha_entrega_almacen: DateTime.now(),
-    salida_mantenimiento: false,
-    fecha_salida_mantenimiento: null,
-    baja: false,
-    cargas: mantenimiento.cargas ?? 0,
-    area_fecha_de_entrega_transformador_reparado: mantenimiento.area_fecha_de_entrega_transformador_reparado ?? '',
-    motivo: mantenimiento.motivo,
-    motivos: mantenimiento.motivos,
-    enviadoMantenimiento: false,
-    fechaEnvioMantenimiento: null,
-  );
+  // Verificar si ya existe un transformador con la misma serie
+  final querySnapshot = await db
+      .collection("transformadores2025")
+      .where("Serie", isEqualTo: mantenimiento.serie)
+      .get();
 
-  await db.collection("transformadores2025").add(transformadorActual.toJson());
+  if (querySnapshot.docs.isNotEmpty) {
+    // Actualizar el transformador existente
+    final existingDoc = querySnapshot.docs.first;
+    await db.collection("transformadores2025").doc(existingDoc.id).update({
+      'estado': 'reparado',
+      'fecha_de_entrada_al_taller': DateTime.now(),
+      'fecha_de_salida_del_taller': DateTime.now(),
+      'fecha_entrega_almacen': DateTime.now(),
+      'contadorEnviosMantenimiento': mantenimiento.contador,
+      'enviadoMantenimiento': false,
+      'reparado': true,
+    });
+    print("✅ Transformador existente actualizado: ${mantenimiento.serie}");
+  } else {
+    // Crear nuevo transformador si no existe
+    final consecutivo = await _obtenerNuevoConsecutivo();
+    
+    final transformadorActual = Tranformadoresactuales(
+      area: mantenimiento.area,
+      consecutivo: consecutivo,
+      fecha_de_llegada: mantenimiento.fecha_de_entrada_al_taller ?? DateTime.now(),
+      mes: mantenimiento.mes ?? _obtenerMesActual(),
+      marca: mantenimiento.marca,
+      aceite: mantenimiento.aceite,
+      economico: mantenimiento.economico,
+      capacidadKVA: mantenimiento.capacidadKVA ?? 0.0,
+      fases: mantenimiento.fases,
+      serie: mantenimiento.serie,
+      peso_placa_de_datos: mantenimiento.peso_placa_de_datos,
+      fecha_fabricacion: mantenimiento.fecha_fabricacion ?? DateTime.now(),
+      fecha_prueba: DateTime.now(),
+      valor_prueba_1: mantenimiento.valor_prueba_1 ?? '',
+      valor_prueba_2: mantenimiento.valor_prueba_2 ?? '',
+      valor_prueba_3: mantenimiento.valor_prueba_3 ?? '',
+      resistencia_aislamiento_megaoms: mantenimiento.resistencia_aislamiento_megaoms,
+      rigidez_dielecrica_kv: mantenimiento.rigidez_dielecrica_kv,
+      estado: "reparado",
+      fecha_de_entrada_al_taller: mantenimiento.fecha_de_entrada_al_taller ?? DateTime.now(),
+      fecha_de_salida_del_taller: mantenimiento.fecha_de_salida_del_taller ?? DateTime.now(),
+      fecha_entrega_almacen: DateTime.now(),
+      salida_mantenimiento: false,
+      fecha_salida_mantenimiento: null,
+      baja: false,
+      cargas: mantenimiento.cargas ?? 0,
+      area_fecha_de_entrega_transformador_reparado: mantenimiento.area_fecha_de_entrega_transformador_reparado ?? '',
+      motivo: mantenimiento.motivo,
+      motivos: mantenimiento.motivos,
+      enviadoMantenimiento: false,
+      fechaEnvioMantenimiento: null,
+      // NUEVO: Mantener el contador de envíos a mantenimiento
+      contadorEnviosMantenimiento: mantenimiento.contador,
+    );
+
+    await db.collection("transformadores2025").add(transformadorActual.toJson());
+    print("✅ Nuevo transformador creado: ${mantenimiento.serie}");
+  }
 }
 
-/// Enviar a Transformadores por Zona (modelo TransformadoresXZona)
+/// Enviar a Transformadores por Zona (modelo TransformadoresXZona) CON CONTADOR
 Future<void> _enviarATransformadoresXZona(mantenimiento_model.Mantenimiento mantenimiento) async {
-  final transformadorXZona = xzona_model.TransformadoresXZona(
-    zona: mantenimiento.zona ?? '',
-    economico: int.tryParse(mantenimiento.economico) ?? 0,
-    marca: mantenimiento.marca,
-    capacidadKVA: mantenimiento.capacidadKVA ?? 0.0,
-    fases: mantenimiento.fases,
-    serie: mantenimiento.serie,
-    aceite: mantenimiento.aceite,
-    peso_placa_de_datos: mantenimiento.peso_placa_de_datos,
-    relacion: mantenimiento.relacion ?? 0,
-    estado: "Reparado",
-    fechaMovimiento: DateTime.now(),
-    reparado: true,
-    motivo: mantenimiento.motivo,
-    enviadoMantenimiento: false,
-    fechaEnvioMantenimiento: null,
-  );
+  // Verificar si ya existe un transformador con la misma serie en la misma zona
+  final querySnapshot = await db
+      .collection("transformadoresxzona")
+      .where("Numero_de_serie", isEqualTo: mantenimiento.serie)
+      .where("Zona", isEqualTo: mantenimiento.zona ?? '')
+      .get();
 
-  await db.collection("transformadoresxzona").add(transformadorXZona.toJson());
+  if (querySnapshot.docs.isNotEmpty) {
+    // Actualizar el transformador existente en lugar de crear uno nuevo
+    final existingDoc = querySnapshot.docs.first;
+    await db.collection("transformadoresxzona").doc(existingDoc.id).update({
+      'Estado': 'Reparado',
+      'Reparado': true,
+      'Fecha_mov': DateTime.now(),
+      'contadorEnviosMantenimiento': mantenimiento.contador,
+      'enviadoMantenimiento': false,
+    });
+    print("✅ Transformador existente actualizado en zona: ${mantenimiento.zona}");
+  } else {
+    // Crear nuevo transformador si no existe
+    final transformadorXZona = xzona_model.TransformadoresXZona(
+      zona: mantenimiento.zona ?? '',
+      economico: int.tryParse(mantenimiento.economico) ?? 0,
+      marca: mantenimiento.marca,
+      capacidadKVA: mantenimiento.capacidadKVA ?? 0.0,
+      fases: mantenimiento.fases,
+      serie: mantenimiento.serie,
+      aceite: mantenimiento.aceite,
+      peso_placa_de_datos: mantenimiento.peso_placa_de_datos,
+      relacion: mantenimiento.relacion ?? 0,
+      estado: "Reparado",
+      fechaMovimiento: DateTime.now(),
+      reparado: true,
+      motivo: mantenimiento.motivo,
+      enviadoMantenimiento: false,
+      fechaEnvioMantenimiento: null,
+      // NUEVO: Mantener el contador de envíos a mantenimiento
+      contadorEnviosMantenimiento: mantenimiento.contador,
+    );
+
+    await db.collection("transformadoresxzona").add(transformadorXZona.toJson());
+    print("✅ Nuevo transformador creado en zona: ${mantenimiento.zona}");
+  }
 }
 
 /// CRUD
@@ -327,6 +388,7 @@ mantenimiento_model.Mantenimiento _createDefaultMantenimiento() {
     serie: '',
     fecha_prueba_1: DateTime(1900),
     fecha_prueba_2: DateTime(1900),
+    contadorReparaciones: 0,
   );
 }
 
@@ -366,7 +428,8 @@ Future<void> exportMantenimientosToExcel(BuildContext context) async {
     'Fecha de prueba', 'RT Fase A', 'RT Fase B', 'RT Fase C', 
     'Resistencia de aislamiento', 'Rigidez dieléctrica', 'Estado', 
     'Fecha de alta', 'Fecha de salida', 'Motivo', 'Fecha Reparación', 
-    'Destino Reparado', 'Enviado a Mantenimiento', 'Fecha Envío Mantenimiento'
+    'Destino Reparado', 'Enviado a Mantenimiento', 'Fecha Envío Mantenimiento',
+    'Veces Reparado', 'Contador Mantenimiento' // NUEVOS CAMPOS
   ];
   
   for (int i = 0; i < headers.length; i++) {
@@ -404,6 +467,9 @@ Future<void> exportMantenimientosToExcel(BuildContext context) async {
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 22, rowIndex: i + 1)).value = TextCellValue(item.destinoReparado ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 23, rowIndex: i + 1)).value = TextCellValue(item.enviadoMantenimiento.toString());
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 24, rowIndex: i + 1)).value = TextCellValue(item.fechaEnvioMantenimiento?.toString() ?? '');
+    // NUEVOS CAMPOS
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 25, rowIndex: i + 1)).value = TextCellValue(item.contadorReparaciones.toString());
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 26, rowIndex: i + 1)).value = TextCellValue(item.contador.toString());
   }
 
   String formattedDate = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());

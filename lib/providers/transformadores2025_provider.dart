@@ -50,8 +50,8 @@ class Transformadores2025Provider extends ChangeNotifier {
   Future<void> addTransformadorProvider(Tranformadoresactuales nuevo) async {
     try {
       await addTransformador(nuevo);
-      _transformadores.add(nuevo);
-      notifyListeners();
+      // Recargar datos para incluir el nuevo registro
+      await fetchTransformadores();
     } catch (e) {
       debugPrint('❌ Error al agregar transformador 2025: $e');
       rethrow;
@@ -85,52 +85,23 @@ class Transformadores2025Provider extends ChangeNotifier {
     }
   }
 
-  // 🔁 Enviar a mantenimiento CON NÚMERO AUTOMÁTICO Y TODOS LOS DATOS
+  // 🔁 Enviar a mantenimiento CON CONTADOR Y ACTUALIZACIÓN AUTOMÁTICA
   Future<int> enviarAMantenimientoProvider(String id, String motivo) async {
     try {
-      // 1. Buscar el transformador en la lista local
-      final transformador = _transformadores.firstWhere((t) => t.id == id);
-      
-      // 2. Preparar todos los datos del transformador
-      final datosTransformador = {
-        'area': transformador.area,
-        'capacidadKVA': transformador.capacidadKVA,
-        'economico': transformador.economico,
-        'estado': transformador.estado,
-        'fases': transformador.fases,
-        'fecha_de_llegada': transformador.fecha_de_llegada,
-        'mes': transformador.mes,
-        'marca': transformador.marca,
-        'aceite': transformador.aceite,
-        'serie': transformador.serie,
-        'peso_placa_de_datos': transformador.peso_placa_de_datos,
-        'fecha_fabricacion': transformador.fecha_fabricacion,
-        'fecha_prueba': transformador.fecha_prueba,
-        'valor_prueba_1': transformador.valor_prueba_1,
-        'valor_prueba_2': transformador.valor_prueba_2,
-        'valor_prueba_3': transformador.valor_prueba_3,
-        'resistencia_aislamiento_megaoms': transformador.resistencia_aislamiento_megaoms,
-        'rigidez_dielecrica_kv': transformador.rigidez_dielecrica_kv,
-        'fecha_de_entrada_al_taller': transformador.fecha_de_entrada_al_taller,
-        'fecha_de_salida_del_taller': transformador.fecha_de_salida_del_taller,
-        'fecha_entrega_almacen': transformador.fecha_entrega_almacen,
-        'salida_mantenimiento': transformador.salida_mantenimiento,
-        'fecha_salida_mantenimiento': transformador.fecha_salida_mantenimiento,
-        'baja': transformador.baja,
-        'cargas': transformador.cargas,
-        'area_fecha_de_entrega_transformador_reparado': transformador.area_fecha_de_entrega_transformador_reparado,
-        'motivo': transformador.motivo,
-        'consecutivo': transformador.consecutivo,
-      };
-      
-      // 3. Enviar a mantenimiento con número automático
-      final result = await enviarAMantenimientoDesdeOtraPantalla(datosTransformador, motivo);
+      // 1. Enviar a mantenimiento usando el servicio actualizado
+      final result = await enviarAMantenimiento(id, motivo);
       
       if (result == 200) {
-        // 4. Marcar como enviado a mantenimiento en el transformador original
-        transformador.enviadoMantenimiento = true;
-        transformador.fechaEnvioMantenimiento = DateTime.now();
-        notifyListeners();
+        // 2. Actualizar la lista local inmediatamente
+        final transformadorIndex = _transformadores.indexWhere((t) => t.id == id);
+        if (transformadorIndex != -1) {
+          // Incrementar contador localmente
+          _transformadores[transformadorIndex].contadorEnviosMantenimiento = 
+              (_transformadores[transformadorIndex].contadorEnviosMantenimiento ?? 0) + 1;
+          _transformadores[transformadorIndex].enviadoMantenimiento = true;
+          
+          notifyListeners();
+        }
       }
       return result;
     } catch (e) {
