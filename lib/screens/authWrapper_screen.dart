@@ -13,7 +13,10 @@ class AuthWrapper extends StatelessWidget {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
+        final sessionProvider = Provider.of<SessionProvider>(context, listen: false);
+
         if (snapshot.connectionState == ConnectionState.waiting) {
+          // Muestra un loading mientras verifica el estado de autenticación
           return const Scaffold(
             body: Center(
               child: CircularProgressIndicator(),
@@ -21,15 +24,20 @@ class AuthWrapper extends StatelessWidget {
           );
         }
 
-        // Usuario logueado - mostrar PrincipalScreen con SessionProvider
-        if (snapshot.hasData) {
-          return ChangeNotifierProvider(
-            create: (_) => SessionProvider(),
-            child: const PrincipalScreen(),
-          );
+        // Si el usuario está autenticado, ir a PrincipalScreen
+        if (snapshot.hasData && snapshot.data != null) {
+          // Iniciar sesión en el provider cuando el usuario se autentica
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!sessionProvider.isSessionActive) {
+              sessionProvider.startSession();
+              print('🚀 SESIÓN INICIADA desde AuthWrapper');
+            }
+          });
+          
+          return const PrincipalScreen();
         }
-
-        // Usuario no logueado - mostrar AuthScreen
+        
+        // Si no está autenticado, ir a LoginScreen
         return const AuthScreen();
       },
     );

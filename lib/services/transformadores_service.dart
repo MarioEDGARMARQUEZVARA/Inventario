@@ -46,7 +46,7 @@ Future<List<Tranformadoresactuales>> getTranformadoresActuales() async {
         fecha_entrega_almacen: DateTime(1900),
         salida_mantenimiento: false,
         fecha_salida_mantenimiento: null,
-        baja: '',
+        baja: false,
         cargas: 0,
         area_fecha_de_entrega_transformador_reparado: '',
       );
@@ -156,7 +156,7 @@ Stream<List<Tranformadoresactuales>> transformadoresActualesStream() {
             fecha_entrega_almacen: DateTime(1900),
             salida_mantenimiento: false,
             fecha_salida_mantenimiento: null,
-            baja: '',
+            baja: false,
             cargas: 0,
             area_fecha_de_entrega_transformador_reparado: '',
           );
@@ -212,7 +212,7 @@ Future<void> exportTransformadoresToExcel(BuildContext context) async {
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 22, rowIndex: i + 1)).value = TextCellValue(item.fecha_entrega_almacen?.toString() ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 23, rowIndex: i + 1)).value = TextCellValue(item.salida_mantenimiento.toString() ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 24, rowIndex: i + 1)).value = TextCellValue(item.fecha_salida_mantenimiento?.toString() ?? '');
-    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 25, rowIndex: i + 1)).value = TextCellValue(item.baja ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 25, rowIndex: i + 1)).value = TextCellValue(item.baja.toString());
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 26, rowIndex: i + 1)).value = TextCellValue(item.cargas?.toString() ?? '');  
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 27, rowIndex: i + 1)).value = TextCellValue(item.motivo ?? '');
 

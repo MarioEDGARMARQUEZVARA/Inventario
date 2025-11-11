@@ -7,6 +7,7 @@ import 'package:inventario_proyecto/screens/transformadoresactuales_add_screen.d
 import 'package:provider/provider.dart';
 import '../providers/transformadores2025_provider.dart';
 import '../providers/session_provider.dart';
+import '../widgets/inactivity_detector.dart';
 
 class Transformadores2025Screen extends StatefulWidget {
   const Transformadores2025Screen({super.key});
@@ -28,9 +29,9 @@ class _Transformadores2025ScreenState
       final provider = context.read<Transformadores2025Provider>();
       provider.fetchTransformadores();
       
-      // Iniciar sesión de inactividad
+      // SOLO resetear timer, NO iniciar sesión
       final sessionProvider = context.read<SessionProvider>();
-      sessionProvider.startSession();
+      sessionProvider.resetTimer();
     });
   }
 
@@ -368,59 +369,61 @@ class _Transformadores2025ScreenState
   Widget build(BuildContext context) {
     final sessionProvider = Provider.of<SessionProvider>(context);
 
-    return Scaffold(
-      drawer: const MainDrawer(),
-      appBar: AppBar(
-        backgroundColor: sessionProvider.showTimeoutDialog 
-            ? Colors.orange 
-            : const Color(0xFF2A1AFF),
-        title: const Text(
-          'Transformadores 2025',
-          style: TextStyle(color: Colors.white),
+    return InactivityDetector(
+      child: Scaffold(
+        drawer: const MainDrawer(),
+        appBar: AppBar(
+          backgroundColor: sessionProvider.showTimeoutDialog 
+              ? Colors.orange 
+              : const Color(0xFF2A1AFF),
+          title: const Text(
+            'Transformadores 2025',
+            style: TextStyle(color: Colors.white),
+          ),
+          iconTheme: const IconThemeData(color: Colors.white),
+          elevation: 0,
+          actions: [_buildFilterButton()],
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
-        elevation: 0,
-        actions: [_buildFilterButton()],
-      ),
-      body: Consumer<Transformadores2025Provider>(
-        builder: (context, provider, child) {
-          if (provider.isLoading && !sessionProvider.showTimeoutDialog) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (provider.errorMessage != null && !sessionProvider.showTimeoutDialog) {
-            return Center(child: Text(provider.errorMessage!));
-          }
+        body: Consumer<Transformadores2025Provider>(
+          builder: (context, provider, child) {
+            if (provider.isLoading && !sessionProvider.showTimeoutDialog) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (provider.errorMessage != null && !sessionProvider.showTimeoutDialog) {
+              return Center(child: Text(provider.errorMessage!));
+            }
 
-          final filteredTransformadores = provider.filteredTransformadores;
-          return _buildBody(filteredTransformadores, provider.selectedField);
-        },
-      ),
-      floatingActionButton: sessionProvider.showTimeoutDialog
-          ? FloatingActionButton(
-              backgroundColor: Colors.orange,
-              foregroundColor: Colors.white,
-              onPressed: () {
-                Scaffold.of(context).openDrawer();
-              },
-              child: const Icon(Icons.warning),
-            )
-          : Padding(
-              padding: const EdgeInsets.only(bottom: 10.0),
-              child: FloatingActionButton(
-                backgroundColor: const Color(0xFF2196F3),
-                onPressed: sessionProvider.showTimeoutDialog 
-                    ? null 
-                    : () async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const TransformadoresActualesAddScreen(),
-                          ),
-                        );
-                      },
-                child: const Icon(Icons.add, size: 32),
+            final filteredTransformadores = provider.filteredTransformadores;
+            return _buildBody(filteredTransformadores, provider.selectedField);
+          },
+        ),
+        floatingActionButton: sessionProvider.showTimeoutDialog
+            ? FloatingActionButton(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+                onPressed: () {
+                  Scaffold.of(context).openDrawer();
+                },
+                child: const Icon(Icons.warning),
+              )
+            : Padding(
+                padding: const EdgeInsets.only(bottom: 10.0),
+                child: FloatingActionButton(
+                  backgroundColor: const Color(0xFF2196F3),
+                  onPressed: sessionProvider.showTimeoutDialog 
+                      ? null 
+                      : () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const TransformadoresActualesAddScreen(),
+                            ),
+                          );
+                        },
+                  child: const Icon(Icons.add, size: 32),
+                ),
               ),
-            ),
+      ),
     );
   }
 }

@@ -3,6 +3,10 @@ import 'package:inventario_proyecto/models/tranformadoresactuales.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:inventario_proyecto/services/transformadores_service.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../providers/session_provider.dart';
+import '../widgets/inactivity_detector.dart';
+import '../widgets/main_drawer.dart';
 
 class TransformadoresActualesAddScreen extends StatefulWidget {
   const TransformadoresActualesAddScreen({super.key});
@@ -13,6 +17,7 @@ class TransformadoresActualesAddScreen extends StatefulWidget {
 
 class _TransformadoresActualesAddScreenState extends State<TransformadoresActualesAddScreen> {
   final _formKey = GlobalKey<FormState>();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   final areaController = TextEditingController();
   DateTime fechaDeLlegada = DateTime.now();
@@ -37,7 +42,8 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
   bool salidaMantenimiento = false;
   DateTime? fechaSalidaMantenimiento;
   final motivoController = TextEditingController();
-  final bajaController = TextEditingController();
+  // CAMBIO: Cambiar TextEditingController por String? para el dropdown de baja
+  String? bajaSeleccionada;
   final cargasController = TextEditingController();
   final areaEntregaReparadoController = TextEditingController();
 
@@ -46,6 +52,9 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
   String? mesSeleccionado;
+
+  // CAMBIO: Lista de opciones para baja
+  final List<String> opcionesBaja = ['Sí', 'No'];
 
   String _formatDate(DateTime date) {
     return DateFormat('dd/MM/yyyy').format(date);
@@ -77,7 +86,6 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
     resistenciaAislamientoController.dispose();
     rigidezDielecricaController.dispose();
     estadoController.dispose();
-    bajaController.dispose();
     cargasController.dispose();
     areaEntregaReparadoController.dispose();
     super.dispose();
@@ -92,6 +100,8 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
     final consecutivo = await _getConsecutivo();
     final aceite = '${aceiteController.text.trim()} LTS';
     final pesoPlaca = '${pesoPlacaController.text.trim()} KGS';
+    // CAMBIO: Convertir "Sí"/"No" a boolean
+    final baja = bajaSeleccionada == 'Sí';
 
     final transformador = Tranformadoresactuales(
       area: areaController.text,
@@ -118,7 +128,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
       fecha_entrega_almacen: fechaEntregaAlmacen,
       salida_mantenimiento: salidaMantenimiento,
       fecha_salida_mantenimiento: salidaMantenimiento ? fechaSalidaMantenimiento : null,
-      baja: bajaController.text,
+      baja: baja, // CAMBIO: Usar el valor convertido
       cargas: int.tryParse(cargasController.text) ?? 0,
       area_fecha_de_entrega_transformador_reparado: areaEntregaReparadoController.text,
       motivo: salidaMantenimiento ? motivoController.text : null,
@@ -127,13 +137,17 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
     await addTransformador(transformador);
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildNormalContent() {
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         title: const Text('Agregar Transformador Actual'),
         backgroundColor: const Color(0xFF2A1AFF),
         foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -324,6 +338,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                     border: OutlineInputBorder(),
                   ),
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                  keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -333,6 +348,7 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                     border: OutlineInputBorder(),
                   ),
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                  keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -434,12 +450,24 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
                   ),
                   const SizedBox(height: 16),
                 ],
-                TextFormField(
-                  controller: bajaController,
+                // CAMBIO: Reemplazar TextFormField por DropdownButtonFormField para baja
+                DropdownButtonFormField<String>(
+                  value: bajaSeleccionada,
                   decoration: const InputDecoration(
                     labelText: 'Baja',
                     border: OutlineInputBorder(),
                   ),
+                  items: opcionesBaja.map((opcion) {
+                    return DropdownMenuItem(
+                      value: opcion,
+                      child: Text(opcion),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      bajaSeleccionada = value;
+                    });
+                  },
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
@@ -484,6 +512,106 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTimeoutContent() {
+    return Scaffold(
+      key: _scaffoldKey,
+      appBar: AppBar(
+        title: const Text('Agregar Transformador Actual'),
+        backgroundColor: Colors.orange,
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.menu, color: Colors.white),
+          onPressed: () {
+            _scaffoldKey.currentState?.openDrawer();
+          },
+        ),
+      ),
+      drawer: const MainDrawer(),
+      body: Container(
+        color: Colors.white,
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.timer,
+              size: 80,
+              color: Colors.orange,
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              '¡Sesión por expirar!',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.orange,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Consumer<SessionProvider>(
+              builder: (context, sessionProvider, child) {
+                return Text(
+                  'Tiempo restante: ${sessionProvider.countdownSeconds} segundos',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Abre el menú lateral para extender tu sesión',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            _buildDisabledButton('Guardar Transformador', Color(0xFF2196F3)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDisabledButton(String text, Color color) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color.withOpacity(0.5),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+        ),
+        onPressed: null,
+        child: Text(text, style: const TextStyle(color: Colors.white54, fontSize: 16)),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<SessionProvider>(
+      builder: (context, sessionProvider, child) {
+        // Cerrar teclado cuando entra en modo timeout
+        if (sessionProvider.showTimeoutDialog) {
+          FocusScope.of(context).unfocus();
+        }
+
+        return InactivityDetector(
+          child: sessionProvider.showTimeoutDialog 
+              ? _buildTimeoutContent()
+              : _buildNormalContent(),
+        );
+      },
     );
   }
 }

@@ -6,6 +6,7 @@ import 'package:inventario_proyecto/providers/transformadoresxzona_provider.dart
 import 'package:inventario_proyecto/services/transformadoresxzona_service.dart';
 import 'package:provider/provider.dart';
 import '../providers/session_provider.dart';
+import '../widgets/inactivity_detector.dart';
 
 class TransformadoresxzonaMembersScreen extends StatefulWidget {
   final String zona;
@@ -33,9 +34,9 @@ class _TransformadoresxzonaMembersScreenState
       final provider = context.read<TransformadoresxZonaProvider>();
       provider.fetchTransformadores(widget.zona);
       
-      // Iniciar sesión de inactividad
+      // SOLO resetear timer, NO iniciar sesión
       final sessionProvider = context.read<SessionProvider>();
-      sessionProvider.startSession();
+      sessionProvider.resetTimer();
     });
   }
 
@@ -58,7 +59,7 @@ class _TransformadoresxzonaMembersScreenState
       case 'Marca':
         return data.map((t) => t.marca).toSet().toList();
 
-      case 'Estado': // CAMBIADO: Status -> Estado
+      case 'Estado':
         return data.map((t) => t.estado).toSet().toList();
 
       case 'Peso':
@@ -124,263 +125,267 @@ class _TransformadoresxzonaMembersScreenState
   Widget build(BuildContext context) {
     final sessionProvider = Provider.of<SessionProvider>(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: sessionProvider.showTimeoutDialog 
-            ? Colors.orange 
-            : const Color(0xFF2A1AFF),
-        title: Text(
-          'ZONA: ${widget.zona.toUpperCase()}',
-          style: const TextStyle(color: Colors.white),
-        ),
-        iconTheme: const IconThemeData(color: Colors.white),
-        elevation: 0,
-        actions: [
-          Consumer<TransformadoresxZonaProvider>(
-            builder: (context, provider, child) {
-              final data = provider.transformadoresFiltrados
-                  .where((t) => t.zona == widget.zona)
-                  .toList();
-
-              return PopupMenuButton<String>(
-                icon: const Icon(Icons.filter_alt),
-                onSelected: sessionProvider.showTimeoutDialog 
-                    ? null 
-                    : (value) {
-                        if (value == "clear") {
-                          provider.clearFilters();
-                          setState(() {
-                            currentPage = 0;
-                          });
-                        } else if (value != null) {
-                          _showSubMenu(context, value, data);
-                        }
-                      },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(value: 'Capacidad', child: Text('Capacidad')),
-                  const PopupMenuItem(value: 'Fases', child: Text('Fases')),
-                  const PopupMenuItem(value: 'Marca', child: Text('Marca')),
-                  const PopupMenuItem(value: 'Estado', child: Text('Estado')), // CAMBIADO: Status -> Estado
-                  const PopupMenuItem(value: 'Peso', child: Text('Peso')),
-                  const PopupMenuItem(value: 'aceite', child: Text('aceite')),
-                  const PopupMenuDivider(),
-                  const PopupMenuItem(value: 'clear', child: Text('Quitar filtro')),
-                ],
-              );
-            },
+    return InactivityDetector(
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: sessionProvider.showTimeoutDialog 
+              ? Colors.orange 
+              : const Color(0xFF2A1AFF),
+          title: Text(
+            'ZONA: ${widget.zona.toUpperCase()}',
+            style: const TextStyle(color: Colors.white),
           ),
-        ],
-      ),
-      body: Consumer<TransformadoresxZonaProvider>(
-        builder: (context, provider, child) {
-          if (provider.isLoading && !sessionProvider.showTimeoutDialog) {
-            return const Center(child: CircularProgressIndicator());
-          }
+          iconTheme: const IconThemeData(color: Colors.white),
+          elevation: 0,
+          actions: [
+            Consumer<TransformadoresxZonaProvider>(
+              builder: (context, provider, child) {
+                final data = provider.transformadoresFiltrados
+                    .where((t) => t.zona == widget.zona)
+                    .toList();
 
-          var transformadores = provider.transformadoresFiltrados
-              .where((t) => t.zona == widget.zona)
-              .toList();
-          final totalPages = (transformadores.length / itemsPerPage).ceil();
-          final start = currentPage * itemsPerPage;
-          final end = (start + itemsPerPage).clamp(0, transformadores.length);
-          final pageItems = transformadores.sublist(start, end);
-          return Stack(
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(bottom: 100),
-                child: Column(
-                  children: [
-                    // Mostrar filtro activo si existe
-                    if (provider.selectedFilter != null && provider.selectedValue != null && !sessionProvider.showTimeoutDialog)
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.blue[50],
-                          borderRadius: BorderRadius.circular(8),
+                return PopupMenuButton<String>(
+                  icon: const Icon(Icons.filter_alt),
+                  onSelected: sessionProvider.showTimeoutDialog 
+                      ? null 
+                      : (value) {
+                          if (value == "clear") {
+                            provider.clearFilters();
+                            setState(() {
+                              currentPage = 0;
+                            });
+                          } else if (value != null) {
+                            _showSubMenu(context, value, data);
+                          }
+                        },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(value: 'Capacidad', child: Text('Capacidad')),
+                    const PopupMenuItem(value: 'Fases', child: Text('Fases')),
+                    const PopupMenuItem(value: 'Marca', child: Text('Marca')),
+                    const PopupMenuItem(value: 'Estado', child: Text('Estado')),
+                    const PopupMenuItem(value: 'Peso', child: Text('Peso')),
+                    const PopupMenuItem(value: 'aceite', child: Text('aceite')),
+                    const PopupMenuDivider(),
+                    const PopupMenuItem(value: 'clear', child: Text('Quitar filtro')),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+        body: Consumer<TransformadoresxZonaProvider>(
+          builder: (context, provider, child) {
+            if (provider.isLoading && !sessionProvider.showTimeoutDialog) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            var transformadores = provider.transformadoresFiltrados
+                .where((t) => t.zona == widget.zona)
+                .toList();
+            final totalPages = (transformadores.length / itemsPerPage).ceil();
+            final start = currentPage * itemsPerPage;
+            final end = (start + itemsPerPage).clamp(0, transformadores.length);
+            final pageItems = transformadores.sublist(start, end);
+            return Stack(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 100),
+                  child: Column(
+                    children: [
+                      // Mostrar filtro activo si existe
+                      if (provider.selectedFilter != null && provider.selectedValue != null && !sessionProvider.showTimeoutDialog)
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.blue[50],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Filtro: ${provider.selectedFilter} = ${provider.selectedValue}',
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.close, size: 16),
+                                onPressed: sessionProvider.showTimeoutDialog 
+                                    ? null 
+                                    : () {
+                                        provider.clearFilters();
+                                        setState(() {
+                                          currentPage = 0;
+                                        });
+                                      },
+                              ),
+                            ],
+                          ),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Filtro: ${provider.selectedFilter} = ${provider.selectedValue}',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.close, size: 16),
-                              onPressed: sessionProvider.showTimeoutDialog 
-                                  ? null 
-                                  : () {
-                                      provider.clearFilters();
-                                      setState(() {
-                                        currentPage = 0;
-                                      });
+                      Expanded(
+                        child: sessionProvider.showTimeoutDialog
+                            ? const Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.timer, size: 50, color: Colors.orange),
+                                    SizedBox(height: 16),
+                                    Text(
+                                      'Sesión por expirar',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.orange,
+                                      ),
+                                    ),
+                                    SizedBox(height: 8),
+                                    Text(
+                                      'Abre el menú lateral para extender tu sesión',
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : (transformadores.isEmpty
+                                ? const Center(
+                                    child: Text('No hay transformadores registrados.'))
+                                : ListView.builder(
+                                    itemCount: pageItems.length,
+                                    itemBuilder: (context, index) {
+                                      final t = pageItems[index];
+                                      return InkWell(
+                                        onTap: sessionProvider.showTimeoutDialog 
+                                            ? null 
+                                            : () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (_) =>
+                                                        TrasnformadoresxzonaOperationsScreen(
+                                                            transformador: t),
+                                                  ),
+                                                );
+                                              },
+                                        child: Container(
+                                          margin: const EdgeInsets.symmetric(
+                                              vertical: 6, horizontal: 8),
+                                          padding: const EdgeInsets.all(8),
+                                          color: Colors.grey[300],
+                                          child: Row(
+                                            children: [
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      t.serie,
+                                                      style: const TextStyle(
+                                                          fontWeight: FontWeight.bold,
+                                                          fontSize: 16),
+                                                    ),
+                                                    Text(
+                                                      provider.selectedFilter != null
+                                                          ? "${provider.selectedFilter}: ${provider.selectedValue}"
+                                                          : "Estado: ${t.estado}",
+                                                      style: const TextStyle(
+                                                          color: Colors.black54, fontSize: 14),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              // AGREGAR ICONO DE HERRAMIENTA AZUL SI FUE ENVIADO A MANTENIMIENTO
+                                              if (t.enviadoMantenimiento)
+                                                const Padding(
+                                                  padding: EdgeInsets.only(left: 8.0),
+                                                  child: Icon(Icons.build, color: Colors.blue, size: 24),
+                                                ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
                                     },
+                                  )),
+                      ),
+                      if (totalPages > 1 && !sessionProvider.showTimeoutDialog)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.arrow_back),
+                              onPressed: currentPage > 0
+                                  ? () => setState(() => currentPage--)
+                                  : null,
+                            ),
+                            Text("Página ${currentPage + 1} de $totalPages"),
+                            IconButton(
+                              icon: const Icon(Icons.arrow_forward),
+                              onPressed: currentPage < totalPages - 1
+                                  ? () => setState(() => currentPage++)
+                                  : null,
                             ),
                           ],
                         ),
-                      ),
-                    Expanded(
-                      child: sessionProvider.showTimeoutDialog
-                          ? const Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.timer, size: 50, color: Colors.orange),
-                                  SizedBox(height: 16),
-                                  Text(
-                                    'Sesión por expirar',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.orange,
-                                    ),
-                                  ),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    'Abre el menú lateral para extender tu sesión',
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              ),
-                            )
-                          : (transformadores.isEmpty
-                              ? const Center(
-                                  child: Text('No hay transformadores registrados.'))
-                              : ListView.builder(
-                                  itemCount: pageItems.length,
-                                  itemBuilder: (context, index) {
-                                    final t = pageItems[index];
-                                    return InkWell(
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) =>
-                                                TrasnformadoresxzonaOperationsScreen(
-                                                    transformador: t),
-                                          ),
-                                        );
-                                      },
-                                      child: Container(
-                                        margin: const EdgeInsets.symmetric(
-                                            vertical: 6, horizontal: 8),
-                                        padding: const EdgeInsets.all(8),
-                                        color: Colors.grey[300],
-                                        child: Row(
-                                          children: [
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    t.serie,
-                                                    style: const TextStyle(
-                                                        fontWeight: FontWeight.bold,
-                                                        fontSize: 16),
-                                                  ),
-                                                  Text(
-                                                    provider.selectedFilter != null
-                                                        ? "${provider.selectedFilter}: ${provider.selectedValue}"
-                                                        : "Estado: ${t.estado}", // CAMBIADO: Status -> Estado
-                                                    style: const TextStyle(
-                                                        color: Colors.black54, fontSize: 14),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            // AGREGAR ICONO DE HERRAMIENTA AZUL SI FUE ENVIADO A MANTENIMIENTO
-                                            if (t.enviadoMantenimiento)
-                                              const Padding(
-                                                padding: EdgeInsets.only(left: 8.0),
-                                                child: Icon(Icons.build, color: Colors.blue, size: 24),
-                                              ),
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                )),
-                    ),
-                    if (totalPages > 1 && !sessionProvider.showTimeoutDialog)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.arrow_back),
-                            onPressed: currentPage > 0
-                                ? () => setState(() => currentPage--)
-                                : null,
-                          ),
-                          Text("Página ${currentPage + 1} de $totalPages"),
-                          IconButton(
-                            icon: const Icon(Icons.arrow_forward),
-                            onPressed: currentPage < totalPages - 1
-                                ? () => setState(() => currentPage++)
-                                : null,
-                          ),
-                        ],
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 32.0),
-                  child: SizedBox(
-                    width: 180,
-                    height: 48,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: sessionProvider.showTimeoutDialog 
-                            ? Colors.grey 
-                            : Colors.green,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 32.0),
+                    child: SizedBox(
+                      width: 180,
+                      height: 48,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: sessionProvider.showTimeoutDialog 
+                              ? Colors.grey 
+                              : Colors.green,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
-                      ),
-                      onPressed: sessionProvider.showTimeoutDialog 
-                          ? null 
-                          : () {
-                              exportTransformadoresxzonaToExcel(context);
-                            },
-                      child: const Text(
-                        'Exportar a xlsx',
-                        style: TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.bold),
+                        onPressed: sessionProvider.showTimeoutDialog 
+                            ? null 
+                            : () {
+                                exportTransformadoresxzonaToExcel(context);
+                              },
+                        child: const Text(
+                          'Exportar a xlsx',
+                          style: TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ),
                   ),
                 ),
+              ],
+            );
+          },
+        ),
+        floatingActionButton: sessionProvider.showTimeoutDialog
+            ? FloatingActionButton(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+                onPressed: () {
+                  Scaffold.of(context).openDrawer();
+                },
+                child: const Icon(Icons.warning),
+              )
+            : FloatingActionButton(
+                backgroundColor: const Color(0xFF2196F3),
+                onPressed: sessionProvider.showTimeoutDialog 
+                    ? null 
+                    : () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => TransformadoresxzonaAddScreen(zona: widget.zona),
+                          ),
+                        );
+                      },
+                child: const Icon(Icons.add, size: 32),
               ),
-            ],
-          );
-        },
       ),
-      floatingActionButton: sessionProvider.showTimeoutDialog
-          ? FloatingActionButton(
-              backgroundColor: Colors.orange,
-              foregroundColor: Colors.white,
-              onPressed: () {
-                Scaffold.of(context).openDrawer();
-              },
-              child: const Icon(Icons.warning),
-            )
-          : FloatingActionButton(
-              backgroundColor: const Color(0xFF2196F3),
-              onPressed: sessionProvider.showTimeoutDialog 
-                  ? null 
-                  : () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => TransformadoresxzonaAddScreen(zona: widget.zona),
-                        ),
-                      );
-                    },
-              child: const Icon(Icons.add, size: 32),
-            ),
     );
   }
 }

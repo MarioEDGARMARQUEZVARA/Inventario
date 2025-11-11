@@ -43,12 +43,11 @@ class Tranformadoresactuales {
   DateTime fecha_entrega_almacen;
   bool salida_mantenimiento;
   DateTime? fecha_salida_mantenimiento;
-  String baja;
+  bool baja;
   int cargas;
   String area_fecha_de_entrega_transformador_reparado;
   String? motivo;
   List<Motivo>? motivos;
-  // Nuevos campos para tracking de mantenimiento
   bool enviadoMantenimiento;
   DateTime? fechaEnvioMantenimiento;
 
@@ -101,7 +100,7 @@ class Tranformadoresactuales {
         area: get(map, ['Area', 'area'])?.toString() ?? '',
         economico: get(map, ['Economico', 'economico', 'Economico'])?.toString() ?? '',
         capacidadKVA: (() {
-          final v = get(map, ['CapacidadKVA', 'Capacidad KVA', 'capacidad']);
+          final v = get(map, ['CapacidadKVA', 'Capacidad KVA', 'capacidad', 'Capacidad']);
           if (v is double) return v;
           if (v is num) return v.toDouble();
           return double.tryParse(v?.toString() ?? '0') ?? 0;
@@ -145,7 +144,11 @@ class Tranformadoresactuales {
         fecha_salida_mantenimiento: get(map, ['Fecha_salida_mantenimiento', 'fecha_salida_mantenimiento']) != null
             ? _parseFecha(get(map, ['Fecha_salida_mantenimiento', 'fecha_salida_mantenimiento']))
             : null,
-        baja: get(map, ['Baja', 'baja'])?.toString() ?? '',
+        baja: (() {
+          final v = get(map, ['Baja', 'baja']);
+          if (v is bool) return v;
+          return v?.toString() == 'true';
+        })(),
         cargas: (() {
           final v = get(map, ['Cargas', 'cargas']);
           if (v is int) return v;
@@ -190,7 +193,7 @@ class Tranformadoresactuales {
         fecha_entrega_almacen: DateTime(1900),
         salida_mantenimiento: false,
         fecha_salida_mantenimiento: null,
-        baja: '',
+        baja: false,
         cargas: 0,
         area_fecha_de_entrega_transformador_reparado: '',
         enviadoMantenimiento: false,

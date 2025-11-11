@@ -7,6 +7,7 @@ import 'package:inventario_proyecto/screens/mantenimiento_add_screen.dart';
 import 'package:inventario_proyecto/widgets/main_drawer.dart';
 import 'package:provider/provider.dart';
 import '../providers/session_provider.dart';
+import '../widgets/inactivity_detector.dart';
 
 class MantenimientoScreen extends StatefulWidget {
   const MantenimientoScreen({super.key});
@@ -26,9 +27,9 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
       final provider = context.read<MantenimientoProvider>();
       provider.fetchMantenimientos();
       
-      // Iniciar sesión de inactividad
+      // SOLO resetear timer, NO iniciar sesión
       final sessionProvider = context.read<SessionProvider>();
-      sessionProvider.startSession();
+      sessionProvider.resetTimer();
     });
   }
 
@@ -324,54 +325,56 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
   Widget build(BuildContext context) {
     final sessionProvider = Provider.of<SessionProvider>(context);
 
-    return Scaffold(
-      drawer: const MainDrawer(),
-      appBar: AppBar(
-        backgroundColor: sessionProvider.showTimeoutDialog 
-            ? Colors.orange 
-            : const Color(0xFF2A1AFF),
-        title: const Text(
-          'Mantenimiento',
-          style: TextStyle(color: Colors.white),
+    return InactivityDetector(
+      child: Scaffold(
+        drawer: const MainDrawer(),
+        appBar: AppBar(
+          backgroundColor: sessionProvider.showTimeoutDialog 
+              ? Colors.orange 
+              : const Color(0xFF2A1AFF),
+          title: const Text(
+            'Mantenimiento',
+            style: TextStyle(color: Colors.white),
+          ),
+          iconTheme: const IconThemeData(color: Colors.white),
+          elevation: 0,
+          actions: [_buildFilterButton()],
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
-        elevation: 0,
-        actions: [_buildFilterButton()],
-      ),
-      body: Consumer<MantenimientoProvider>(
-        builder: (context, provider, child) {
-          if (provider.isLoading && !sessionProvider.showTimeoutDialog) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (provider.errorMessage != null && !sessionProvider.showTimeoutDialog) {
-            return Center(child: Text(provider.errorMessage!));
-          }
+        body: Consumer<MantenimientoProvider>(
+          builder: (context, provider, child) {
+            if (provider.isLoading && !sessionProvider.showTimeoutDialog) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (provider.errorMessage != null && !sessionProvider.showTimeoutDialog) {
+              return Center(child: Text(provider.errorMessage!));
+            }
 
-          final filteredMantenimientos = provider.filteredMantenimientos;
-          return _buildBody(filteredMantenimientos, provider.selectedField);
-        },
+            final filteredMantenimientos = provider.filteredMantenimientos;
+            return _buildBody(filteredMantenimientos, provider.selectedField);
+          },
+        ),
+        floatingActionButton: sessionProvider.showTimeoutDialog
+            ? FloatingActionButton(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+                onPressed: () {
+                  Scaffold.of(context).openDrawer();
+                },
+                child: const Icon(Icons.warning),
+              )
+            : FloatingActionButton(
+                backgroundColor: const Color(0xFF2196F3),
+                onPressed: sessionProvider.showTimeoutDialog 
+                    ? null 
+                    : () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const MantenimientoAddScreen()),
+                        );
+                      },
+                child: const Icon(Icons.add, size: 32),
+              ),
       ),
-      floatingActionButton: sessionProvider.showTimeoutDialog
-          ? FloatingActionButton(
-              backgroundColor: Colors.orange,
-              foregroundColor: Colors.white,
-              onPressed: () {
-                Scaffold.of(context).openDrawer();
-              },
-              child: const Icon(Icons.warning),
-            )
-          : FloatingActionButton(
-              backgroundColor: const Color(0xFF2196F3),
-              onPressed: sessionProvider.showTimeoutDialog 
-                  ? null 
-                  : () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const MantenimientoAddScreen()),
-                      );
-                    },
-              child: const Icon(Icons.add, size: 32),
-            ),
     );
   }
 }
