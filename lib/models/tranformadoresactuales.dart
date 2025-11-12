@@ -43,14 +43,15 @@ class Tranformadoresactuales {
   DateTime fecha_entrega_almacen;
   bool salida_mantenimiento;
   DateTime? fecha_salida_mantenimiento;
-  String baja;
+  bool baja;
   int cargas;
   String area_fecha_de_entrega_transformador_reparado;
   String? motivo;
   List<Motivo>? motivos;
-  // Nuevos campos para tracking de mantenimiento
   bool enviadoMantenimiento;
   DateTime? fechaEnvioMantenimiento;
+  // NUEVO CAMPO: Contador de veces enviado a mantenimiento
+  int contadorEnviosMantenimiento;
 
   Tranformadoresactuales({
     this.id,
@@ -85,6 +86,7 @@ class Tranformadoresactuales {
     this.motivos,
     this.enviadoMantenimiento = false,
     this.fechaEnvioMantenimiento,
+    this.contadorEnviosMantenimiento = 0, // INICIALIZADO EN 0
   });
 
   factory Tranformadoresactuales.fromMap(Map<String, dynamic> map) {
@@ -101,7 +103,7 @@ class Tranformadoresactuales {
         area: get(map, ['Area', 'area'])?.toString() ?? '',
         economico: get(map, ['Economico', 'economico', 'Economico'])?.toString() ?? '',
         capacidadKVA: (() {
-          final v = get(map, ['CapacidadKVA', 'Capacidad KVA', 'capacidad']);
+          final v = get(map, ['CapacidadKVA', 'Capacidad KVA', 'capacidad', 'Capacidad']);
           if (v is double) return v;
           if (v is num) return v.toDouble();
           return double.tryParse(v?.toString() ?? '0') ?? 0;
@@ -145,7 +147,11 @@ class Tranformadoresactuales {
         fecha_salida_mantenimiento: get(map, ['Fecha_salida_mantenimiento', 'fecha_salida_mantenimiento']) != null
             ? _parseFecha(get(map, ['Fecha_salida_mantenimiento', 'fecha_salida_mantenimiento']))
             : null,
-        baja: get(map, ['Baja', 'baja'])?.toString() ?? '',
+        baja: (() {
+          final v = get(map, ['Baja', 'baja']);
+          if (v is bool) return v;
+          return v?.toString() == 'true';
+        })(),
         cargas: (() {
           final v = get(map, ['Cargas', 'cargas']);
           if (v is int) return v;
@@ -162,6 +168,12 @@ class Tranformadoresactuales {
           return v?.toString() == 'true';
         })(),
         fechaEnvioMantenimiento: _parseFecha(get(map, ['fechaEnvioMantenimiento'])),
+        // NUEVO: Contador de envíos a mantenimiento
+        contadorEnviosMantenimiento: (() {
+          final v = get(map, ['contadorEnviosMantenimiento']);
+          if (v is int) return v;
+          return int.tryParse(v?.toString() ?? '0') ?? 0;
+        })(),
       );
     } catch (e) {
       print('Tranformadoresactuales.fromMap parse error: $e -- map: $map');
@@ -190,11 +202,12 @@ class Tranformadoresactuales {
         fecha_entrega_almacen: DateTime(1900),
         salida_mantenimiento: false,
         fecha_salida_mantenimiento: null,
-        baja: '',
+        baja: false,
         cargas: 0,
         area_fecha_de_entrega_transformador_reparado: '',
         enviadoMantenimiento: false,
         fechaEnvioMantenimiento: null,
+        contadorEnviosMantenimiento: 0,
       );
     }
   }
@@ -231,6 +244,8 @@ class Tranformadoresactuales {
       'Motivo': motivo,
       'enviadoMantenimiento': enviadoMantenimiento,
       'fechaEnvioMantenimiento': fechaEnvioMantenimiento,
+      // NUEVO: Contador de envíos a mantenimiento
+      'contadorEnviosMantenimiento': contadorEnviosMantenimiento,
     };
     if (motivos != null) {
       json['Motivos'] = motivos!.map((m) => m.toJson()).toList();

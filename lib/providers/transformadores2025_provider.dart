@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:inventario_proyecto/models/tranformadoresactuales.dart';
 import 'package:inventario_proyecto/services/transformadores_service.dart';
+import 'package:inventario_proyecto/services/mantenimiento_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Transformadores2025Provider extends ChangeNotifier {
   final List<Tranformadoresactuales> _transformadores = [];
@@ -48,8 +50,8 @@ class Transformadores2025Provider extends ChangeNotifier {
   Future<void> addTransformadorProvider(Tranformadoresactuales nuevo) async {
     try {
       await addTransformador(nuevo);
-      _transformadores.add(nuevo);
-      notifyListeners();
+      // Recargar datos para incluir el nuevo registro
+      await fetchTransformadores();
     } catch (e) {
       debugPrint('❌ Error al agregar transformador 2025: $e');
       rethrow;
@@ -83,16 +85,23 @@ class Transformadores2025Provider extends ChangeNotifier {
     }
   }
 
-  // 🔁 Enviar a mantenimiento
+  // 🔁 Enviar a mantenimiento CON CONTADOR Y ACTUALIZACIÓN AUTOMÁTICA
   Future<int> enviarAMantenimientoProvider(String id, String motivo) async {
     try {
+      // 1. Enviar a mantenimiento usando el servicio actualizado
       final result = await enviarAMantenimiento(id, motivo);
+      
       if (result == 200) {
-        // Marcar como enviado a mantenimiento en lugar de eliminar
-        final transformador = _transformadores.firstWhere((t) => t.id == id);
-        transformador.enviadoMantenimiento = true;
-        transformador.fechaEnvioMantenimiento = DateTime.now();
-        notifyListeners();
+        // 2. Actualizar la lista local inmediatamente
+        final transformadorIndex = _transformadores.indexWhere((t) => t.id == id);
+        if (transformadorIndex != -1) {
+          // Incrementar contador localmente
+          _transformadores[transformadorIndex].contadorEnviosMantenimiento = 
+              (_transformadores[transformadorIndex].contadorEnviosMantenimiento ?? 0) + 1;
+          _transformadores[transformadorIndex].enviadoMantenimiento = true;
+          
+          notifyListeners();
+        }
       }
       return result;
     } catch (e) {

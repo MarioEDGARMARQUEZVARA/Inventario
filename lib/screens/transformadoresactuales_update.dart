@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:inventario_proyecto/models/tranformadoresactuales.dart';
 import 'package:inventario_proyecto/services/transformadores_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/session_provider.dart';
+import '../widgets/inactivity_detector.dart';
+import '../widgets/main_drawer.dart';
 
 class TransformadoresActualesUpdateScreen extends StatefulWidget {
   final Tranformadoresactuales transformador;
@@ -14,6 +18,7 @@ class TransformadoresActualesUpdateScreen extends StatefulWidget {
 
 class _TransformadoresActualesUpdateScreenState extends State<TransformadoresActualesUpdateScreen> {
   final _formKey = GlobalKey<FormState>();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   late TextEditingController areaController;
   late DateTime fechaDeLlegada;
@@ -39,14 +44,18 @@ class _TransformadoresActualesUpdateScreenState extends State<TransformadoresAct
   late bool salidaMantenimiento;
   DateTime? fechaSalidaMantenimiento;
   late TextEditingController motivoController;
-  late TextEditingController bajaController;
-  late TextEditingController areaEntregaReparadoController;
+  // CAMBIO: Cambiar TextEditingController por String? para el dropdown de baja
+  late String? bajaSeleccionada;
   late TextEditingController cargasController;
+  late TextEditingController areaEntregaReparadoController;
 
   final List<String> meses = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
+
+  // CAMBIO: Lista de opciones para baja
+  final List<String> opcionesBaja = ['Sí', 'No'];
 
   String _formatDate(DateTime date) {
     return DateFormat('dd/MM/yyyy').format(date);
@@ -81,7 +90,8 @@ class _TransformadoresActualesUpdateScreenState extends State<TransformadoresAct
     fechaSalidaMantenimiento = t.fecha_salida_mantenimiento;
     motivoController = TextEditingController(text: t.motivo ?? '');
     cargasController = TextEditingController(text: t.cargas.toString());
-    bajaController = TextEditingController(text: t.baja ?? '');
+    // CAMBIO: Inicializar bajaSeleccionada según el valor booleano
+    bajaSeleccionada = t.baja ? 'Sí' : 'No';
     areaEntregaReparadoController = TextEditingController(text: t.area_fecha_de_entrega_transformador_reparado ?? '');
   }
 
@@ -121,20 +131,25 @@ class _TransformadoresActualesUpdateScreenState extends State<TransformadoresAct
     t.salida_mantenimiento = salidaMantenimiento;
     t.fecha_salida_mantenimiento = salidaMantenimiento ? fechaSalidaMantenimiento : null;
     t.motivo = salidaMantenimiento ? motivoController.text : null;
-    t.baja = bajaController.text;
+    // CAMBIO: Convertir "Sí"/"No" a boolean
+    t.baja = bajaSeleccionada == 'Sí';
     t.cargas = int.tryParse(cargasController.text) ?? 0;
     t.area_fecha_de_entrega_transformador_reparado = areaEntregaReparadoController.text;
 
     await updateTransformador(t);
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildNormalContent() {
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         title: const Text('Editar Transformador Actual'),
         backgroundColor: const Color(0xFF2A1AFF),
         foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -440,8 +455,11 @@ class _TransformadoresActualesUpdateScreenState extends State<TransformadoresAct
                   const SizedBox(height: 16),
                 ],
 
-                TextFormField(
-                  controller: bajaController,
+                // CAMBIO: Reemplazar TextFormField por DropdownButtonFormField para baja
+                DropdownButtonFormField<String>(
+                  value: bajaSeleccionada,
+                  items: opcionesBaja.map((opcion) => DropdownMenuItem(value: opcion, child: Text(opcion))).toList(),
+                  onChanged: (v) => setState(() => bajaSeleccionada = v),
                   decoration: const InputDecoration(
                     labelText: 'Baja',
                     border: OutlineInputBorder(),
@@ -490,6 +508,106 @@ class _TransformadoresActualesUpdateScreenState extends State<TransformadoresAct
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTimeoutContent() {
+    return Scaffold(
+      key: _scaffoldKey,
+      appBar: AppBar(
+        title: const Text('Editar Transformador Actual'),
+        backgroundColor: Colors.orange,
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.menu, color: Colors.white),
+          onPressed: () {
+            _scaffoldKey.currentState?.openDrawer();
+          },
+        ),
+      ),
+      drawer: const MainDrawer(),
+      body: Container(
+        color: Colors.white,
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.timer,
+              size: 80,
+              color: Colors.orange,
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              '¡Sesión por expirar!',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.orange,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Consumer<SessionProvider>(
+              builder: (context, sessionProvider, child) {
+                return Text(
+                  'Tiempo restante: ${sessionProvider.countdownSeconds} segundos',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Abre el menú lateral para extender tu sesión',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            _buildDisabledButton('Guardar Cambios', Color(0xFF2196F3)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDisabledButton(String text, Color color) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color.withOpacity(0.5),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+        ),
+        onPressed: null,
+        child: Text(text, style: const TextStyle(color: Colors.white54, fontSize: 16)),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<SessionProvider>(
+      builder: (context, sessionProvider, child) {
+        // Cerrar teclado cuando entra en modo timeout
+        if (sessionProvider.showTimeoutDialog) {
+          FocusScope.of(context).unfocus();
+        }
+
+        return InactivityDetector(
+          child: sessionProvider.showTimeoutDialog 
+              ? _buildTimeoutContent()
+              : _buildNormalContent(),
+        );
+      },
     );
   }
 }

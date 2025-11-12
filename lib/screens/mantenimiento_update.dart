@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:inventario_proyecto/models/mantenimiento.dart';
 import 'package:inventario_proyecto/services/mantenimiento_service.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../providers/session_provider.dart';
+import '../widgets/inactivity_detector.dart';
+import '../widgets/main_drawer.dart';
 
 class MantenimientoUpdateScreen extends StatefulWidget {
   final Mantenimiento mantenimiento;
@@ -13,6 +17,7 @@ class MantenimientoUpdateScreen extends StatefulWidget {
 
 class _MantenimientoUpdateScreenState extends State<MantenimientoUpdateScreen> {
   final _formKey = GlobalKey<FormState>();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   late TextEditingController areaController;
   late TextEditingController capacidadController;
@@ -35,8 +40,8 @@ class _MantenimientoUpdateScreenState extends State<MantenimientoUpdateScreen> {
   late DateTime fechaAlta;
   late DateTime fechaSalida;
   late DateTime fechaFabricacion;
-  late DateTime fechaPruebaInicio;
-  late DateTime fechaPruebaFin;
+  late DateTime fechaPrueba1;
+  late DateTime fechaPrueba2;
 
   @override
   void initState() {
@@ -59,12 +64,12 @@ class _MantenimientoUpdateScreenState extends State<MantenimientoUpdateScreen> {
     serieController = TextEditingController(text: m.serie);
     motivoController = TextEditingController(text: m.motivo ?? '');
 
-    fechaAlta = m.fecha_de_alta!;
-    fechaSalida = m.fecha_de_salida_del_taller!;
-    fechaFabricacion = m.fecha_fabricacion!;
-    fechaLlegada = m.fecha_de_entrada_al_taller!;
-    fechaPruebaInicio = m.fecha_prueba.inicio!;
-    fechaPruebaFin = m.fecha_prueba.fin!;
+    fechaAlta = m.fecha_de_alta ?? DateTime.now();
+    fechaSalida = m.fecha_de_salida_del_taller ?? DateTime.now();
+    fechaFabricacion = m.fecha_fabricacion ?? DateTime.now();
+    fechaLlegada = m.fecha_de_entrada_al_taller ?? DateTime.now();
+    fechaPrueba1 = m.fecha_prueba_1 ?? DateTime.now();
+    fechaPrueba2 = m.fecha_prueba_2 ?? DateTime.now();
   }
 
   Future<void> _selectDate(BuildContext context, DateTime initialDate, Function(DateTime) onSelected) async {
@@ -102,13 +107,17 @@ class _MantenimientoUpdateScreenState extends State<MantenimientoUpdateScreen> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildNormalContent() {
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         title: const Text('Actualizar Mantenimiento'),
         backgroundColor: const Color(0xFF2A1AFF),
         foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -244,48 +253,39 @@ class _MantenimientoUpdateScreenState extends State<MantenimientoUpdateScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                Row(
-                  children: [
-                    Expanded(
-                      child: InkWell(
-                        onTap: () => _selectDate(context, fechaPruebaInicio, (d) => setState(() => fechaPruebaInicio = d)),
-                        child: InputDecorator(
-                          decoration: const InputDecoration(
-                            labelText: 'Fecha prueba inicio',
-                            border: OutlineInputBorder(),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(_formatDate(fechaPruebaInicio)),
-                              const Icon(Icons.calendar_today, size: 20),
-                            ],
-                          ),
-                        ),
-                      ),
+                InkWell(
+                  onTap: () => _selectDate(context, fechaPrueba1, (d) => setState(() => fechaPrueba1 = d)),
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Fecha de prueba 1',
+                      border: OutlineInputBorder(),
                     ),
-                    const SizedBox(width: 8),
-                    const Text('-'),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: InkWell(
-                        onTap: () => _selectDate(context, fechaPruebaFin, (d) => setState(() => fechaPruebaFin = d)),
-                        child: InputDecorator(
-                          decoration: const InputDecoration(
-                            labelText: 'Fecha prueba fin',
-                            border: OutlineInputBorder(),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(_formatDate(fechaPruebaFin)),
-                              const Icon(Icons.calendar_today, size: 20),
-                            ],
-                          ),
-                        ),
-                      ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(_formatDate(fechaPrueba1)),
+                        const Icon(Icons.calendar_today, size: 20),
+                      ],
                     ),
-                  ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                InkWell(
+                  onTap: () => _selectDate(context, fechaPrueba2, (d) => setState(() => fechaPrueba2 = d)),
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Fecha de prueba 2',
+                      border: OutlineInputBorder(),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(_formatDate(fechaPrueba2)),
+                        const Icon(Icons.calendar_today, size: 20),
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
 
@@ -406,7 +406,8 @@ class _MantenimientoUpdateScreenState extends State<MantenimientoUpdateScreen> {
                         fecha_de_salida_del_taller: fechaSalida,
                         fecha_fabricacion: fechaFabricacion,
                         fecha_de_entrada_al_taller: fechaLlegada,
-                        fecha_prueba: RangoFecha(inicio: fechaPruebaInicio, fin: fechaPruebaFin),
+                        fecha_prueba_1: fechaPrueba1,
+                        fecha_prueba_2: fechaPrueba2,
                         peso_placa_de_datos: kilos,
                         aceite: litros,
                         marca: marcaController.text,
@@ -438,6 +439,106 @@ class _MantenimientoUpdateScreenState extends State<MantenimientoUpdateScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTimeoutContent() {
+    return Scaffold(
+      key: _scaffoldKey,
+      appBar: AppBar(
+        title: const Text('Actualizar Mantenimiento'),
+        backgroundColor: Colors.orange,
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.menu, color: Colors.white),
+          onPressed: () {
+            _scaffoldKey.currentState?.openDrawer();
+          },
+        ),
+      ),
+      drawer: const MainDrawer(),
+      body: Container(
+        color: Colors.white,
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.timer,
+              size: 80,
+              color: Colors.orange,
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              '¡Sesión por expirar!',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.orange,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Consumer<SessionProvider>(
+              builder: (context, sessionProvider, child) {
+                return Text(
+                  'Tiempo restante: ${sessionProvider.countdownSeconds} segundos',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Abre el menú lateral para extender tu sesión',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            _buildDisabledButton('Guardar Cambios', Colors.blue[700]!),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDisabledButton(String text, Color color) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color.withOpacity(0.5),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+        ),
+        onPressed: null,
+        child: Text(text, style: const TextStyle(color: Colors.white54, fontSize: 16)),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<SessionProvider>(
+      builder: (context, sessionProvider, child) {
+        // Cerrar teclado cuando entra en modo timeout
+        if (sessionProvider.showTimeoutDialog) {
+          FocusScope.of(context).unfocus();
+        }
+
+        return InactivityDetector(
+          child: sessionProvider.showTimeoutDialog 
+              ? _buildTimeoutContent()
+              : _buildNormalContent(),
+        );
+      },
     );
   }
 }

@@ -14,7 +14,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   
   // Inicializar localización para fechas en español
@@ -23,10 +22,10 @@ Future<void> main() async {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => SessionProvider()), // SessionProvider PRIMERO
         ChangeNotifierProvider(create: (_) => MantenimientoProvider()),
         ChangeNotifierProvider(create: (_) => TransformadoresxZonaProvider()),
         ChangeNotifierProvider(create: (_) => Transformadores2025Provider()),
-        ChangeNotifierProvider(create: (_) => SessionProvider()),
       ],
       child: const MainApp(),
     ),
@@ -38,33 +37,26 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<SessionProvider>(
-      builder: (context, sessionProvider, child) {
-        return MaterialApp(
-          title: 'JQ7B - MEMV',
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData(
-            useMaterial3: true,
-            colorScheme: ColorScheme.fromSeed(seedColor: Colors.red),
-          ),
-          localizationsDelegates: const [
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: const [
-            Locale('es'), // habilita español
-          ],
-          // Usar el navigatorKey del SessionProvider para navegación global
-          navigatorKey: sessionProvider.navigatorKey,
-          navigatorObservers: [FlutterSmartDialog.observer],
-          builder: FlutterSmartDialog.init(),
-          routes: {
-            '/': (context) => const AuthWrapper(),
-          },
-          initialRoute: '/',
-        );
-      },
+    return MaterialApp(
+      title: 'JQ7B - MEMV',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.red),
+      ),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('es'), // habilita español
+      ],
+      // Usar el navigatorKey del SessionProvider
+      navigatorKey: Provider.of<SessionProvider>(context, listen: false).navigatorKey,
+      navigatorObservers: [FlutterSmartDialog.observer],
+      builder: FlutterSmartDialog.init(),
+      home: const AuthWrapper(),
     );
   }
 }

@@ -51,14 +51,14 @@ class TransformadoresXZona {
   String aceite;
   String peso_placa_de_datos;
   int relacion;
-  String estado; // CAMBIADO: status -> estado
+  String estado;
   DateTime? fechaMovimiento;
   bool reparado;
   String? motivo;
   List<Motivo>? motivos;
-  // Nuevos campos para tracking de mantenimiento
   bool enviadoMantenimiento;
   DateTime? fechaEnvioMantenimiento;
+  int contadorEnviosMantenimiento;
 
   TransformadoresXZona({
     this.id,
@@ -71,13 +71,14 @@ class TransformadoresXZona {
     required this.aceite,
     required this.peso_placa_de_datos,
     required this.relacion,
-    required this.estado, // CAMBIADO: status -> estado
+    required this.estado, 
     required this.fechaMovimiento,
     required this.reparado,
     this.motivo,
     this.motivos,
     this.enviadoMantenimiento = false,
     this.fechaEnvioMantenimiento,
+    this.contadorEnviosMantenimiento = 0, 
   });
 
   factory TransformadoresXZona.fromMap(Map<String, dynamic> map) {
@@ -146,6 +147,11 @@ class TransformadoresXZona {
         return v?.toString() == 'true';
       })(),
       fechaEnvioMantenimiento: parseDate(get(map, ['fechaEnvioMantenimiento'])),
+      contadorEnviosMantenimiento: (() {
+        final v = get(map, ['contadorEnviosMantenimiento']);
+        if (v is int) return v;
+        return int.tryParse(v?.toString() ?? '0') ?? 0;
+      })(),
     );
   }
 
@@ -160,12 +166,13 @@ class TransformadoresXZona {
       'aceite': aceite,
       'Peso_kg': peso_placa_de_datos,
       'Relacion': relacion,
-      'Estado': estado, // CAMBIADO: Status -> Estado
+      'Estado': estado, 
       'Fecha_mov': fechaMovimiento,
       'Reparado': reparado,
       'Motivo': motivo,
       'enviadoMantenimiento': enviadoMantenimiento,
       'fechaEnvioMantenimiento': fechaEnvioMantenimiento,
+      'contadorEnviosMantenimiento': contadorEnviosMantenimiento,
     };
     if (motivos != null) {
       json['Motivos'] = motivos!.map((m) => m.toJson()).toList();

@@ -20,11 +20,11 @@ class MainDrawer extends StatelessWidget {
     }
 
     // Drawer normal
-    return _buildNormalDrawer(context, user);
+    return _buildNormalDrawer(context, user, sessionProvider);
   }
 
   // Drawer normal para sesión activa
-  Widget _buildNormalDrawer(BuildContext context, User? user) {
+  Widget _buildNormalDrawer(BuildContext context, User? user, SessionProvider sessionProvider) {
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
@@ -47,9 +47,9 @@ class MainDrawer extends StatelessWidget {
                 Consumer<SessionProvider>(
                   builder: (context, session, _) {
                     return Text(
-                      'Sesión activa',
+                      session.isPaused ? 'Sesión pausada' : 'Sesión activa',
                       style: TextStyle(
-                        color: Colors.green[100],
+                        color: session.isPaused ? Colors.orange[100] : Colors.green[100],
                         fontSize: 12,
                       ),
                     );
@@ -62,7 +62,7 @@ class MainDrawer extends StatelessWidget {
             leading: const Icon(Icons.electric_bolt, color: Color(0xFF2196F3)),
             title: const Text('Transformadores 2025'),
             onTap: () {
-              Provider.of<SessionProvider>(context, listen: false).resetTimer();
+              sessionProvider.resetTimer();
               Navigator.pop(context);
               Navigator.push(
                 context,
@@ -74,7 +74,7 @@ class MainDrawer extends StatelessWidget {
             leading: const Icon(Icons.build, color: Color(0xFF1DE9B6)),
             title: const Text('Mantenimiento'),
             onTap: () {
-              Provider.of<SessionProvider>(context, listen: false).resetTimer();
+              sessionProvider.resetTimer();
               Navigator.pop(context);
               Navigator.push(
                 context,
@@ -86,7 +86,7 @@ class MainDrawer extends StatelessWidget {
             leading: const Icon(Icons.map, color: Color(0xFF651FFF)),
             title: const Text('Transformadores en la zona'),
             onTap: () {
-              Provider.of<SessionProvider>(context, listen: false).resetTimer();
+              sessionProvider.resetTimer();
               Navigator.pop(context);
               Navigator.push(
                 context,
@@ -100,25 +100,14 @@ class MainDrawer extends StatelessWidget {
             leading: const Icon(Icons.timer, color: Colors.orange),
             title: const Text('Extender sesión'),
             onTap: () {
-              final sessionProvider = Provider.of<SessionProvider>(context, listen: false);
-              sessionProvider.resetTimer();
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Sesión extendida'),
-                  backgroundColor: Colors.green,
-                ),
-              );
+              sessionProvider.extendSessionFromUI(context);
             },
           ),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
             title: const Text('Cerrar sesión', style: TextStyle(color: Colors.red)),
             onTap: () async {
-              Navigator.pop(context);
-              await FirebaseAuth.instance.signOut();
-              Navigator.of(context)
-                  .pushNamedAndRemoveUntil('/', (route) => false);
+              await sessionProvider.logoutFromUI(context);
             },
           ),
         ],
@@ -177,7 +166,7 @@ class MainDrawer extends StatelessWidget {
                 ListTile(
                   leading: const Icon(Icons.info, color: Colors.blue),
                   title: const Text('¿Qué está pasando?'),
-                  subtitle: const Text('No se detectó actividad por 5 minutos'),
+                  subtitle: const Text('No se detectó actividad por 30 minutos'),
                   onTap: () {
                     // Información adicional
                   },
@@ -186,9 +175,8 @@ class MainDrawer extends StatelessWidget {
                 ListTile(
                   leading: const Icon(Icons.logout, color: Colors.red),
                   title: const Text('Cerrar sesión ahora'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    FirebaseAuth.instance.signOut();
+                  onTap: () async {
+                    await sessionProvider.logoutFromUI(context);
                   },
                 ),
               ],
@@ -217,14 +205,7 @@ class MainDrawer extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     onPressed: () {
-                      sessionProvider.extendSession();
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Sesión extendida exitosamente'),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
+                      sessionProvider.extendSessionFromUI(context);
                     },
                     child: const Text(
                       'EXTENDER SESIÓN',

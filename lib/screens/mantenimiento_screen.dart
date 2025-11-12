@@ -7,6 +7,7 @@ import 'package:inventario_proyecto/screens/mantenimiento_add_screen.dart';
 import 'package:inventario_proyecto/widgets/main_drawer.dart';
 import 'package:provider/provider.dart';
 import '../providers/session_provider.dart';
+import '../widgets/inactivity_detector.dart';
 
 class MantenimientoScreen extends StatefulWidget {
   const MantenimientoScreen({super.key});
@@ -26,9 +27,9 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
       final provider = context.read<MantenimientoProvider>();
       provider.fetchMantenimientos();
       
-      // Iniciar sesión de inactividad
+      // SOLO resetear timer, NO iniciar sesión
       final sessionProvider = context.read<SessionProvider>();
-      sessionProvider.startSession();
+      sessionProvider.resetTimer();
     });
   }
 
@@ -119,6 +120,7 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
     );
   }
 
+  // En la parte donde se muestran los mantenimientos, asegurar que se muestren TODOS los estados
   Widget _buildBody(List<Mantenimiento> mantenimientos, String selectedField) {
     final sessionProvider = Provider.of<SessionProvider>(context);
     
@@ -238,10 +240,55 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
                           style:
                               const TextStyle(color: Colors.grey, fontSize: 14),
                         ),
-                        // AGREGAR ICONO DE PALOMITA SI ESTÁ REPARADO
-                        trailing: m.estado.toLowerCase() == "reparado" 
-                            ? const Icon(Icons.check_circle, color: Colors.green, size: 24)
-                            : null,
+                      // MOSTRAR ICONOS PARA TODOS LOS ESTADOS
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Mostrar contador de envíos a mantenimiento si existe
+                          if (m.contador > 0)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.build, color: Colors.blue, size: 16),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    '${m.contador}',
+                                    style: const TextStyle(
+                                      color: Colors.blue,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          // Mostrar icono de palomita y contador de reparaciones si está reparado
+                          if (m.estado.toLowerCase() == "reparado") 
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.check_circle, color: Colors.green, size: 24),
+                                if (m.contadorReparaciones > 0)
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 4.0),
+                                    child: Text(
+                                      '${m.contadorReparaciones}',
+                                      style: const TextStyle(
+                                        color: Colors.green,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          // Mostrar icono de reloj si está en mantenimiento
+                          if (m.estado.toLowerCase() == "en mantenimiento")
+                            const Icon(Icons.access_time, color: Colors.orange, size: 24),
+                        ],
+                      ),
                         onTap: sessionProvider.showTimeoutDialog 
                             ? null 
                             : () {
@@ -259,6 +306,46 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
                   },
                 ),
         ),
+        // PAGINACIÓN MOVIDA ARRIBA DEL BOTÓN EXPORTAR
+        if (totalPages > 1 && !sessionProvider.showTimeoutDialog)
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ElevatedButton(
+                  onPressed: currentPage > 0
+                      ? () {
+                          setState(() {
+                            currentPage--;
+                          });
+                        }
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2A1AFF),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text("Anterior"),
+                ),
+                Text("Página ${currentPage + 1} de $totalPages"),
+                ElevatedButton(
+                  onPressed: currentPage < totalPages - 1
+                      ? () {
+                          setState(() {
+                            currentPage++;
+                          });
+                        }
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2A1AFF),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text("Siguiente"),
+                ),
+              ],
+            ),
+          ),
+        // BOTÓN EXPORTAR
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: SizedBox(
@@ -285,37 +372,7 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
             ),
           ),
         ),
-        // Controles de paginación
-        if (totalPages > 1 && !sessionProvider.showTimeoutDialog)
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                ElevatedButton(
-                  onPressed: currentPage > 0
-                      ? () {
-                          setState(() {
-                            currentPage--;
-                          });
-                        }
-                      : null,
-                  child: const Text("Anterior"),
-                ),
-                Text("Página ${currentPage + 1} de $totalPages"),
-                ElevatedButton(
-                  onPressed: currentPage < totalPages - 1
-                      ? () {
-                          setState(() {
-                            currentPage++;
-                          });
-                        }
-                      : null,
-                  child: const Text("Siguiente"),
-                ),
-              ],
-            ),
-          ),
+        const SizedBox(height: 16.0), // Espacio adicional
       ],
     );
   }
@@ -324,54 +381,56 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
   Widget build(BuildContext context) {
     final sessionProvider = Provider.of<SessionProvider>(context);
 
-    return Scaffold(
-      drawer: const MainDrawer(),
-      appBar: AppBar(
-        backgroundColor: sessionProvider.showTimeoutDialog 
-            ? Colors.orange 
-            : const Color(0xFF2A1AFF),
-        title: const Text(
-          'Mantenimiento',
-          style: TextStyle(color: Colors.white),
+    return InactivityDetector(
+      child: Scaffold(
+        drawer: const MainDrawer(),
+        appBar: AppBar(
+          backgroundColor: sessionProvider.showTimeoutDialog 
+              ? Colors.orange 
+              : const Color(0xFF2A1AFF),
+          title: const Text(
+            'Mantenimiento',
+            style: TextStyle(color: Colors.white),
+          ),
+          iconTheme: const IconThemeData(color: Colors.white),
+          elevation: 0,
+          actions: [_buildFilterButton()],
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
-        elevation: 0,
-        actions: [_buildFilterButton()],
-      ),
-      body: Consumer<MantenimientoProvider>(
-        builder: (context, provider, child) {
-          if (provider.isLoading && !sessionProvider.showTimeoutDialog) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (provider.errorMessage != null && !sessionProvider.showTimeoutDialog) {
-            return Center(child: Text(provider.errorMessage!));
-          }
+        body: Consumer<MantenimientoProvider>(
+          builder: (context, provider, child) {
+            if (provider.isLoading && !sessionProvider.showTimeoutDialog) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (provider.errorMessage != null && !sessionProvider.showTimeoutDialog) {
+              return Center(child: Text(provider.errorMessage!));
+            }
 
-          final filteredMantenimientos = provider.filteredMantenimientos;
-          return _buildBody(filteredMantenimientos, provider.selectedField);
-        },
+            final filteredMantenimientos = provider.filteredMantenimientos;
+            return _buildBody(filteredMantenimientos, provider.selectedField);
+          },
+        ),
+        floatingActionButton: sessionProvider.showTimeoutDialog
+            ? FloatingActionButton(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+                onPressed: () {
+                  Scaffold.of(context).openDrawer();
+                },
+                child: const Icon(Icons.warning),
+              )
+            : FloatingActionButton(
+                backgroundColor: const Color(0xFF2196F3),
+                onPressed: sessionProvider.showTimeoutDialog 
+                    ? null 
+                    : () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const MantenimientoAddScreen()),
+                        );
+                      },
+                child: const Icon(Icons.add, size: 32),
+              ),
       ),
-      floatingActionButton: sessionProvider.showTimeoutDialog
-          ? FloatingActionButton(
-              backgroundColor: Colors.orange,
-              foregroundColor: Colors.white,
-              onPressed: () {
-                Scaffold.of(context).openDrawer();
-              },
-              child: const Icon(Icons.warning),
-            )
-          : FloatingActionButton(
-              backgroundColor: const Color(0xFF2196F3),
-              onPressed: sessionProvider.showTimeoutDialog 
-                  ? null 
-                  : () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const MantenimientoAddScreen()),
-                      );
-                    },
-              child: const Icon(Icons.add, size: 32),
-            ),
     );
   }
 }
