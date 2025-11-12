@@ -45,7 +45,7 @@ Future<List<TransformadoresXZona>> getTransformadoresxZona() async {
   }).toList();
 }
 
-/// Enviar transformador a mantenimiento con motivo Y CONTADOR
+/// Enviar transformador a mantenimiento con motivo Y CONTADOR - COMPLETAMENTE CORREGIDO
 Future<int> enviarAMantenimientoZona(String id, String motivo) async {
   int code = 0;
   try {
@@ -57,34 +57,63 @@ Future<int> enviarAMantenimientoZona(String id, String motivo) async {
 
       // Incrementar contador de envíos a mantenimiento
       int contadorActual = data?['contadorEnviosMantenimiento'] ?? 0;
-      data!['contadorEnviosMantenimiento'] = contadorActual + 1;
+      int nuevoContador = contadorActual + 1;
 
-      // Guardar también el origen
-      data["origen"] = "Transformadoresxzona";
+      // CORREGIDO: Actualizar campos de transformadores x zona en el ORIGINAL
+      await db.collection("Transformadoresxzona").doc(id).update({
+        'contadorEnviosMantenimiento': nuevoContador,
+        'enviadoMantenimiento': true,
+        'fechaEnvioMantenimiento': FieldValue.serverTimestamp(),
+        'Reparado': false, // Cambiar a "N" cuando va a mantenimiento
+        'Fecha_mov': FieldValue.serverTimestamp(), // Actualizar fecha de movimiento
+      });
+
+      // Obtener el próximo número de mantenimiento
+      final snapshot = await FirebaseFirestore.instance
+          .collection("mantenimiento2025")
+          .orderBy("numero_mantenimiento", descending: true)
+          .limit(1)
+          .get();
+      
+      int proximoNumero = 1;
+      if (snapshot.docs.isNotEmpty) {
+        final ultimoNumero = snapshot.docs.first.data()['numero_mantenimiento'] as int?;
+        proximoNumero = (ultimoNumero ?? 0) + 1;
+      }
+      
+      print("🎯 Asignando número de mantenimiento: $proximoNumero");
+
+      // Preparar datos para enviar a mantenimiento
+      Map<String, dynamic> datosMantenimiento = Map.from(data!);
+      
+      // CORREGIDO: Actualizar campos específicos para mantenimiento
+      datosMantenimiento['contadorEnviosMantenimiento'] = nuevoContador;
+      datosMantenimiento['enviadoMantenimiento'] = true;
+      datosMantenimiento['fechaEnvioMantenimiento'] = FieldValue.serverTimestamp();
+      datosMantenimiento['Reparado'] = false;
+      datosMantenimiento['Fecha_mov'] = FieldValue.serverTimestamp();
+      datosMantenimiento['Estado'] = 'en mantenimiento';
+      datosMantenimiento['origen'] = "Transformadoresxzona";
+      // CORREGIDO: Asignar el número de mantenimiento
+      datosMantenimiento['numero_mantenimiento'] = proximoNumero;
 
       DocumentReference newDoc =
-          await db.collection("mantenimiento2025").add(data);
+          await db.collection("mantenimiento2025").add(datosMantenimiento);
 
       // Guardar motivo como subcolección
       await newDoc.collection("motivos").add({
         "motivo": motivo,
         "fecha": FieldValue.serverTimestamp(),
-        "numeroEnvio": contadorActual + 1, // Número de envío
+        "numeroEnvio": nuevoContador,
       });
 
-      // Actualizar el transformador con el nuevo contador
-      await db.collection("Transformadoresxzona").doc(id).update({
-        'contadorEnviosMantenimiento': contadorActual + 1,
-        'enviadoMantenimiento': true,
-        'fechaEnvioMantenimiento': FieldValue.serverTimestamp(),
-      });
-
+      print("✅ Transformador por zona enviado a mantenimiento con número: $proximoNumero");
       code = 200;
     } else {
       code = 404;
     }
   } catch (e) {
-    print("Error al enviar a mantenimiento: $e");
+    print("❌ Error al enviar a mantenimiento: $e");
     code = 500;
   }
   return code;
@@ -197,7 +226,7 @@ Future<void> exportTransformadoresxzonaToExcel(BuildContext context) async {
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 8, rowIndex: i + 1)).value = TextCellValue(item.relacion?.toString() ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 9, rowIndex: i + 1)).value = TextCellValue(item.estado ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 10, rowIndex: i + 1)).value = TextCellValue(item.fechaMovimiento.toString() ?? '');
-    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 11, rowIndex: i + 1)).value = TextCellValue(item.reparado.toString() ?? '');
+    sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 11, rowIndex: i + 1)).value = TextCellValue(item.reparado ? "Sí" : "No");
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 12, rowIndex: i + 1)).value = TextCellValue(item.motivo ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 13, rowIndex: i + 1)).value = TextCellValue(item.contadorEnviosMantenimiento?.toString() ?? '0');
   }

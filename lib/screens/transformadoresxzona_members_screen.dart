@@ -320,28 +320,33 @@ class _TransformadoresxzonaMembersScreenState
                                     },
                                   )),
                       ),
+                      // PAGINACIÓN MOVIDA ARRIBA DEL BOTÓN EXPORTAR
                       if (totalPages > 1 && !sessionProvider.showTimeoutDialog)
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.arrow_back),
-                              onPressed: currentPage > 0
-                                  ? () => setState(() => currentPage--)
-                                  : null,
-                            ),
-                            Text("Página ${currentPage + 1} de $totalPages"),
-                            IconButton(
-                              icon: const Icon(Icons.arrow_forward),
-                              onPressed: currentPage < totalPages - 1
-                                  ? () => setState(() => currentPage++)
-                                  : null,
-                            ),
-                          ],
+                        Container(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.arrow_back),
+                                onPressed: currentPage > 0
+                                    ? () => setState(() => currentPage--)
+                                    : null,
+                              ),
+                              Text("Página ${currentPage + 1} de $totalPages"),
+                              IconButton(
+                                icon: const Icon(Icons.arrow_forward),
+                                onPressed: currentPage < totalPages - 1
+                                    ? () => setState(() => currentPage++)
+                                    : null,
+                              ),
+                            ],
+                          ),
                         ),
                     ],
                   ),
                 ),
+                // BOTÓN EXPORTAR DESPUÉS
                 Align(
                   alignment: Alignment.bottomCenter,
                   child: Padding(

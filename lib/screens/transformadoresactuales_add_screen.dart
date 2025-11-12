@@ -96,7 +96,6 @@ class _TransformadoresActualesAddScreenState extends State<TransformadoresActual
     return snapshot.docs.length + 1;
   }
 
-// Reemplaza el método _guardarTransformador() completo:
 Future<void> _guardarTransformador() async {
   final consecutivo = await _getConsecutivo();
   final aceite = '${aceiteController.text.trim()} LTS';
@@ -143,7 +142,7 @@ Future<void> _guardarTransformador() async {
     const SnackBar(content: Text('Transformador agregado correctamente')),
   );
   
-  // Regresar a la pantalla anterior
+  // CORREGIDO: Regresar a la pantalla anterior (Transformadores2025Screen)
   Navigator.pop(context);
 }
 
@@ -504,10 +503,6 @@ Future<void> _guardarTransformador() async {
                   onPressed: () async {
                     if (_formKey.currentState?.validate() ?? false) {
                       await _guardarTransformador();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Transformador agregado correctamente')),
-                      );
-                      Navigator.pop(context);
                     }
                   },
                   style: ElevatedButton.styleFrom(

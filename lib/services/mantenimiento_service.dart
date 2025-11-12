@@ -11,26 +11,33 @@ import 'package:permission_handler/permission_handler.dart';
 
 FirebaseFirestore db = FirebaseFirestore.instance;
 
-/// Obtener el próximo número de mantenimiento disponible
+/// Obtener el próximo número de mantenimiento disponible - MEJORADO
 Future<int> _obtenerProximoNumeroMantenimiento() async {
-  final snapshot = await FirebaseFirestore.instance
-      .collection("mantenimiento2025")
-      .orderBy("numero_mantenimiento", descending: true)
-      .limit(1)
-      .get();
-  
-  if (snapshot.docs.isEmpty) {
-    return 1; // Primer mantenimiento
+  try {
+    final snapshot = await FirebaseFirestore.instance
+        .collection("mantenimiento2025")
+        .orderBy("numero_mantenimiento", descending: true)
+        .limit(1)
+        .get();
+    
+    if (snapshot.docs.isEmpty) {
+      return 1; // Primer mantenimiento
+    }
+    
+    final ultimoNumero = snapshot.docs.first.data()['numero_mantenimiento'] as int?;
+    print("🔢 Último número de mantenimiento encontrado: $ultimoNumero");
+    return (ultimoNumero ?? 0) + 1;
+  } catch (e) {
+    print("❌ Error al obtener próximo número de mantenimiento: $e");
+    return 1; // Valor por defecto en caso de error
   }
-  
-  final ultimoNumero = snapshot.docs.first.data()['numero_mantenimiento'] as int?;
-  return (ultimoNumero ?? 0) + 1;
 }
 
-/// Método para enviar a mantenimiento desde otras pantallas - VERSIÓN MEJORADA CON CONTADORES
+/// Método para enviar a mantenimiento desde otras pantallas - COMPLETAMENTE CORREGIDO
 Future<int> enviarAMantenimientoDesdeOtraPantalla(Map<String, dynamic> datosTransformador, String motivo) async {
   try {
     final proximoNumero = await _obtenerProximoNumeroMantenimiento();
+    print("🎯 Asignando número de mantenimiento: $proximoNumero");
     
     // Función auxiliar para parsear fechas seguras
     DateTime? _parsearFecha(dynamic fecha) {
@@ -50,6 +57,7 @@ Future<int> enviarAMantenimientoDesdeOtraPantalla(Map<String, dynamic> datosTran
     // Obtener contador actual de envíos a mantenimiento
     int contadorActual = datosTransformador['contadorEnviosMantenimiento'] ?? 0;
     
+    // CORREGIDO: Crear el mantenimiento con todos los campos necesarios
     final mantenimiento = mantenimiento_model.Mantenimiento(
       area: datosTransformador['area']?.toString() ?? datosTransformador['zona']?.toString() ?? '',
       capacidadKVA: (datosTransformador['capacidadKVA'] is num) 
@@ -71,7 +79,7 @@ Future<int> enviarAMantenimientoDesdeOtraPantalla(Map<String, dynamic> datosTran
       peso_placa_de_datos: datosTransformador['peso_placa_de_datos']?.toString() ?? '',
       aceite: datosTransformador['aceite']?.toString() ?? '',
       marca: datosTransformador['marca']?.toString() ?? '',
-      numero_mantenimiento: proximoNumero, // ASIGNAR NÚMERO AUTOMÁTICO
+      numero_mantenimiento: proximoNumero, // CORREGIDO: Asignar el número obtenido
       resistencia_aislamiento_megaoms: (datosTransformador['resistencia_aislamiento_megaoms'] is int) 
           ? datosTransformador['resistencia_aislamiento_megaoms'] as int 
           : int.tryParse(datosTransformador['resistencia_aislamiento_megaoms']?.toString() ?? '') ?? 0,
@@ -116,19 +124,23 @@ Future<int> enviarAMantenimientoDesdeOtraPantalla(Map<String, dynamic> datosTran
       rt_fase_c: (datosTransformador['rt_fase_c'] is num) 
           ? (datosTransformador['rt_fase_c'] as num).toDouble() 
           : double.tryParse(datosTransformador['rt_fase_c']?.toString() ?? ''),
-      // NUEVO: Incluir contador de envíos
+      // Contadores
       contador: contadorActual + 1,
+      contadorReparaciones: 0,
     );
     
-    await db.collection("mantenimiento2025").add(mantenimiento.toJson());
+    // CORREGIDO: Guardar el mantenimiento con el número asignado
+    final resultado = await db.collection("mantenimiento2025").add(mantenimiento.toJson());
+    print("✅ Mantenimiento creado con número: $proximoNumero - ID: ${resultado.id}");
+    
     return 200;
   } catch (e) {
-    print("Error al enviar a mantenimiento: $e");
+    print("❌ Error al enviar a mantenimiento: $e");
     return 500;
   }
 }
 
-/// Obtener lista de mantenimiento
+/// Obtener lista de mantenimiento - CORREGIDO para incluir todos los registros
 Future<List<mantenimiento_model.Mantenimiento>> getMantenimientos() async {
   QuerySnapshot query = await db.collection("mantenimiento2025").get();
   return query.docs.map((doc) {
@@ -146,7 +158,7 @@ Future<List<mantenimiento_model.Mantenimiento>> getMantenimientos() async {
   }).toList();
 }
 
-/// Marcar como reparado y enviar a destino adaptándose al modelo correspondiente CON CONTADOR
+/// Marcar como reparado y enviar a destino - CORREGIDO para no eliminar
 Future<int> marcarReparado(String id, {String? destinoManual, mantenimiento_model.Mantenimiento? mantenimiento}) async {
   int code = 0;
   try {
@@ -171,12 +183,12 @@ Future<int> marcarReparado(String id, {String? destinoManual, mantenimiento_mode
 
     final destino = destinoManual ?? "transformadores2025";
 
-    // 1. Marcar como reparado en mantenimiento CON CONTADOR
+    // 1. Marcar como reparado en mantenimiento CON CONTADOR - NO ELIMINAR
     await db.collection("mantenimiento2025").doc(id).update({
-      "estado": "reparado",
-      "fechaReparacion": Timestamp.now(),
+      "Estado": "reparado", // CORREGIDO: Usar "Estado" con mayúscula
+      "fechaReparacion": FieldValue.serverTimestamp(),
       "destinoReparado": destino,
-      "contadorReparaciones": contadorReparaciones + 1, // INCREMENTAR CONTADOR
+      "contadorReparaciones": contadorReparaciones + 1,
     });
 
     // 2. Preparar datos según el destino
@@ -186,8 +198,8 @@ Future<int> marcarReparado(String id, {String? destinoManual, mantenimiento_mode
       await _enviarATransformadoresXZona(datosMantenimiento);
     }
 
-    // 3. Eliminar el mantenimiento después de enviarlo a su destino
-    await db.collection("mantenimiento2025").doc(id).delete();
+    // 3. NO ELIMINAR el mantenimiento - mantenerlo como histórico
+    print("✅ Mantenimiento marcado como reparado, manteniendo registro histórico");
 
     code = 200;
   } catch (e) {
@@ -197,7 +209,7 @@ Future<int> marcarReparado(String id, {String? destinoManual, mantenimiento_mode
   return code;
 }
 
-/// Enviar a Transformadores Actuales (modelo Tranformadoresactuales) CON CONTADOR - MEJORADO
+/// Enviar a Transformadores Actuales - CORREGIDO PARA MANTENER EL CONTADOR
 Future<void> _enviarATransformadoresActuales(mantenimiento_model.Mantenimiento mantenimiento) async {
   // Verificar si ya existe un transformador con la misma serie
   final querySnapshot = await db
@@ -206,20 +218,20 @@ Future<void> _enviarATransformadoresActuales(mantenimiento_model.Mantenimiento m
       .get();
 
   if (querySnapshot.docs.isNotEmpty) {
-    // Actualizar el transformador existente
+    // Actualizar el transformador existente - CORREGIDO: MANTENER EL CONTADOR
     final existingDoc = querySnapshot.docs.first;
     await db.collection("transformadores2025").doc(existingDoc.id).update({
-      'estado': 'reparado',
-      'fecha_de_entrada_al_taller': DateTime.now(),
-      'fecha_de_salida_del_taller': DateTime.now(),
-      'fecha_entrega_almacen': DateTime.now(),
-      'contadorEnviosMantenimiento': mantenimiento.contador,
+      'Estado': 'reparado', // CORREGIDO: Usar "Estado" con mayúscula
+      'fecha_de_entrada_al_taller': FieldValue.serverTimestamp(),
+      'fecha_de_salida_del_taller': FieldValue.serverTimestamp(),
+      'fecha_entrega_almacen': FieldValue.serverTimestamp(),
+      'contadorEnviosMantenimiento': mantenimiento.contador, // CORREGIDO: Usar el contador del mantenimiento
       'enviadoMantenimiento': false,
       'reparado': true,
     });
-    print("✅ Transformador existente actualizado: ${mantenimiento.serie}");
+    print("✅ Transformador existente actualizado: ${mantenimiento.serie} - Contador: ${mantenimiento.contador}");
   } else {
-    // Crear nuevo transformador si no existe
+    // Crear nuevo transformador si no existe - CORREGIDO: MANTENER EL CONTADOR
     final consecutivo = await _obtenerNuevoConsecutivo();
     
     final transformadorActual = Tranformadoresactuales(
@@ -254,37 +266,37 @@ Future<void> _enviarATransformadoresActuales(mantenimiento_model.Mantenimiento m
       motivos: mantenimiento.motivos,
       enviadoMantenimiento: false,
       fechaEnvioMantenimiento: null,
-      // NUEVO: Mantener el contador de envíos a mantenimiento
+      // CORREGIDO: MANTENER el contador de envíos a mantenimiento del registro de mantenimiento
       contadorEnviosMantenimiento: mantenimiento.contador,
     );
 
     await db.collection("transformadores2025").add(transformadorActual.toJson());
-    print("✅ Nuevo transformador creado: ${mantenimiento.serie}");
+    print("✅ Nuevo transformador creado: ${mantenimiento.serie} - Contador: ${mantenimiento.contador}");
   }
 }
 
-/// Enviar a Transformadores por Zona (modelo TransformadoresXZona) CON CONTADOR
+/// Enviar a Transformadores por Zona - CORREGIDO PARA MANTENER EL CONTADOR
 Future<void> _enviarATransformadoresXZona(mantenimiento_model.Mantenimiento mantenimiento) async {
   // Verificar si ya existe un transformador con la misma serie en la misma zona
   final querySnapshot = await db
-      .collection("transformadoresxzona")
+      .collection("Transformadoresxzona")
       .where("Numero_de_serie", isEqualTo: mantenimiento.serie)
       .where("Zona", isEqualTo: mantenimiento.zona ?? '')
       .get();
 
   if (querySnapshot.docs.isNotEmpty) {
-    // Actualizar el transformador existente en lugar de crear uno nuevo
+    // Actualizar el transformador existente en lugar de crear uno nuevo - CORREGIDO: MANTENER EL CONTADOR
     final existingDoc = querySnapshot.docs.first;
-    await db.collection("transformadoresxzona").doc(existingDoc.id).update({
-      'Estado': 'Reparado',
+    await db.collection("Transformadoresxzona").doc(existingDoc.id).update({
+      'Estado': 'Reparado', // CORREGIDO: Usar "Estado" con mayúscula
       'Reparado': true,
-      'Fecha_mov': DateTime.now(),
-      'contadorEnviosMantenimiento': mantenimiento.contador,
+      'Fecha_mov': FieldValue.serverTimestamp(),
+      'contadorEnviosMantenimiento': mantenimiento.contador, // CORREGIDO: Usar el contador del mantenimiento
       'enviadoMantenimiento': false,
     });
-    print("✅ Transformador existente actualizado en zona: ${mantenimiento.zona}");
+    print("✅ Transformador existente actualizado en zona: ${mantenimiento.zona} - Contador: ${mantenimiento.contador}");
   } else {
-    // Crear nuevo transformador si no existe
+    // Crear nuevo transformador si no existe - CORREGIDO: MANTENER EL CONTADOR
     final transformadorXZona = xzona_model.TransformadoresXZona(
       zona: mantenimiento.zona ?? '',
       economico: int.tryParse(mantenimiento.economico) ?? 0,
@@ -301,28 +313,30 @@ Future<void> _enviarATransformadoresXZona(mantenimiento_model.Mantenimiento mant
       motivo: mantenimiento.motivo,
       enviadoMantenimiento: false,
       fechaEnvioMantenimiento: null,
-      // NUEVO: Mantener el contador de envíos a mantenimiento
+      // CORREGIDO: MANTENER el contador de envíos a mantenimiento del registro de mantenimiento
       contadorEnviosMantenimiento: mantenimiento.contador,
     );
 
-    await db.collection("transformadoresxzona").add(transformadorXZona.toJson());
-    print("✅ Nuevo transformador creado en zona: ${mantenimiento.zona}");
+    await db.collection("Transformadoresxzona").add(transformadorXZona.toJson());
+    print("✅ Nuevo transformador creado en zona: ${mantenimiento.zona} - Contador: ${mantenimiento.contador}");
   }
 }
 
-/// CRUD
+/// CRUD - CORREGIDO para asignar número automático si es 0
 Future<int> addMantenimiento(mantenimiento_model.Mantenimiento m) async {
   try {
     // Si no tiene número de mantenimiento, asignar uno automático
     if (m.numero_mantenimiento == 0) {
       final proximoNumero = await _obtenerProximoNumeroMantenimiento();
       m.numero_mantenimiento = proximoNumero;
+      print("🔢 Asignando número automático de mantenimiento: $proximoNumero");
     }
     
     await db.collection("mantenimiento2025").add(m.toJson());
+    print("✅ Mantenimiento agregado con número: ${m.numero_mantenimiento}");
     return 200;
   } catch (e) {
-    print("Error al agregar mantenimiento: $e");
+    print("❌ Error al agregar mantenimiento: $e");
     return 500;
   }
 }
@@ -345,13 +359,12 @@ Future<int> deleteMantenimiento(String id) async {
   }
 }
 
-/// Stream
+/// Stream - CORREGIDO para incluir todos los estados
 Stream<List<mantenimiento_model.Mantenimiento>> mantenimientosStream() {
   return db.collection("mantenimiento2025").snapshots().map((snapshot) =>
       snapshot.docs.map((doc) {
         try {
           final raw = doc.data();
-          print('mantenimientosStream doc.id=${doc.id} data=$raw');
           final data = raw as Map<String, dynamic>? ?? <String, dynamic>{};
           var mantenimiento = mantenimiento_model.Mantenimiento.fromMap(data);
           mantenimiento.id = doc.id;
@@ -429,7 +442,7 @@ Future<void> exportMantenimientosToExcel(BuildContext context) async {
     'Resistencia de aislamiento', 'Rigidez dieléctrica', 'Estado', 
     'Fecha de alta', 'Fecha de salida', 'Motivo', 'Fecha Reparación', 
     'Destino Reparado', 'Enviado a Mantenimiento', 'Fecha Envío Mantenimiento',
-    'Veces Reparado', 'Contador Mantenimiento' // NUEVOS CAMPOS
+    'Veces Reparado', 'Contador Mantenimiento'
   ];
   
   for (int i = 0; i < headers.length; i++) {
@@ -467,7 +480,6 @@ Future<void> exportMantenimientosToExcel(BuildContext context) async {
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 22, rowIndex: i + 1)).value = TextCellValue(item.destinoReparado ?? '');
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 23, rowIndex: i + 1)).value = TextCellValue(item.enviadoMantenimiento.toString());
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 24, rowIndex: i + 1)).value = TextCellValue(item.fechaEnvioMantenimiento?.toString() ?? '');
-    // NUEVOS CAMPOS
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 25, rowIndex: i + 1)).value = TextCellValue(item.contadorReparaciones.toString());
     sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 26, rowIndex: i + 1)).value = TextCellValue(item.contador.toString());
   }

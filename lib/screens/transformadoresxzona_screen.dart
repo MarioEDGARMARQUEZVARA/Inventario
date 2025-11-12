@@ -203,14 +203,78 @@ class _TransformadoresxzonaScreenState
                       },
                     ),
             ),
-            // Botón exportar + paginación debajo
+            // PAGINACIÓN MOVIDA ARRIBA DEL BOTÓN EXPORTAR
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
-                padding: const EdgeInsets.only(bottom: 32.0),
+                padding: const EdgeInsets.only(bottom: 80.0), // Ajustar padding
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // PAGINACIÓN PRIMERO
+                    if (!sessionProvider.showTimeoutDialog)
+                      StreamBuilder<List<TransformadoresXZona>>(
+                        stream: transformadoresxzonaStream(),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) return const SizedBox();
+                          final data = snapshot.data!;
+                          final zonas = <String, List<TransformadoresXZona>>{};
+                          for (var t in data) {
+                            zonas.putIfAbsent(t.zona, () => []).add(t);
+                          }
+                          final zonaEntries = applyFilter(zonas);
+                          final totalPages =
+                              (zonaEntries.length / itemsPerPage).ceil().clamp(1, 999);
+
+                          if (totalPages <= 1) return const SizedBox();
+
+                          return Container(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                ElevatedButton(
+                                  onPressed: currentPage > 0
+                                      ? () {
+                                          setState(() {
+                                            currentPage--;
+                                          });
+                                        }
+                                      : null,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF2A1AFF),
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  child: const Text("Anterior"),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                  child: Text(
+                                    "Página ${currentPage + 1} de $totalPages",
+                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                                ElevatedButton(
+                                  onPressed: currentPage < totalPages - 1
+                                      ? () {
+                                          setState(() {
+                                            currentPage++;
+                                          });
+                                        }
+                                      : null,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF2A1AFF),
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  child: const Text("Siguiente"),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    const SizedBox(height: 12),
+                    // BOTÓN EXPORTAR DESPUÉS
                     SizedBox(
                       width: 180,
                       height: 48,
@@ -235,59 +299,6 @@ class _TransformadoresxzonaScreenState
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    if (!sessionProvider.showTimeoutDialog)
-                      StreamBuilder<List<TransformadoresXZona>>(
-                        stream: transformadoresxzonaStream(),
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData) return const SizedBox();
-                          final data = snapshot.data!;
-                          final zonas = <String, List<TransformadoresXZona>>{};
-                          for (var t in data) {
-                            zonas.putIfAbsent(t.zona, () => []).add(t);
-                          }
-                          final zonaEntries = applyFilter(zonas);
-                          final totalPages =
-                              (zonaEntries.length / itemsPerPage).ceil().clamp(1, 999);
-
-                          if (totalPages <= 1) return const SizedBox();
-
-                          return Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              ElevatedButton(
-                                onPressed: currentPage > 0
-                                    ? () {
-                                        setState(() {
-                                          currentPage--;
-                                        });
-                                      }
-                                    : null,
-                                child: const Text("Anterior"),
-                              ),
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 16.0),
-                                child: Text(
-                                  "Página ${currentPage + 1} de $totalPages",
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              ElevatedButton(
-                                onPressed: currentPage < totalPages - 1
-                                    ? () {
-                                        setState(() {
-                                          currentPage++;
-                                        });
-                                      }
-                                    : null,
-                                child: const Text("Siguiente"),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
                   ],
                 ),
               ),

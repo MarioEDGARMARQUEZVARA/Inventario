@@ -74,6 +74,8 @@ class _TransformadoresxzonaAddScreenState extends State<TransformadoresxzonaAddS
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Transformador agregado correctamente')),
     );
+    
+    // CORREGIDO: Regresar a la pantalla anterior
     Navigator.pop(context);
   }
 

@@ -394,7 +394,7 @@ class _MantenimientoOperationsScreenState extends State<MantenimientoOperationsS
               child: const Text("Transformadores 2025"),
             ),
             TextButton(
-              onPressed: () => Navigator.pop(context, "transformadoresxzona"),
+              onPressed: () => Navigator.pop(context, "Transformadoresxzona"),
               child: const Text("Transformadores por Zona"),
             ),
           ],

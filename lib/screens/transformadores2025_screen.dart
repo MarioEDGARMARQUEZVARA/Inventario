@@ -318,6 +318,46 @@ class _Transformadores2025ScreenState
                   },
                 ),
         ),
+        // PAGINACIÓN MOVIDA ARRIBA DEL BOTÓN EXPORTAR
+        if (totalPages > 1 && !sessionProvider.showTimeoutDialog)
+          Container(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ElevatedButton(
+                  onPressed: currentPage > 0
+                      ? () {
+                          setState(() {
+                            currentPage--;
+                          });
+                        }
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2A1AFF),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text("Anterior"),
+                ),
+                Text("Página ${currentPage + 1} de $totalPages"),
+                ElevatedButton(
+                  onPressed: currentPage < totalPages - 1
+                      ? () {
+                          setState(() {
+                            currentPage++;
+                          });
+                        }
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2A1AFF),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text("Siguiente"),
+                ),
+              ],
+            ),
+          ),
+        // BOTÓN EXPORTAR
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: SizedBox(
@@ -344,36 +384,7 @@ class _Transformadores2025ScreenState
             ),
           ),
         ),
-        Container(
-          padding: const EdgeInsets.all(8.0),
-          margin: const EdgeInsets.only(bottom: 80.0), // Espacio para el FAB
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              ElevatedButton(
-                onPressed: currentPage > 0 && !sessionProvider.showTimeoutDialog
-                    ? () {
-                        setState(() {
-                          currentPage--;
-                        });
-                      }
-                    : null,
-                child: const Text("Anterior"),
-              ),
-              Text("Página ${currentPage + 1} de $totalPages"),
-              ElevatedButton(
-                onPressed: currentPage < totalPages - 1 && !sessionProvider.showTimeoutDialog
-                    ? () {
-                        setState(() {
-                          currentPage++;
-                        });
-                      }
-                    : null,
-                child: const Text("Siguiente"),
-              ),
-            ],
-          ),
-        ),
+        const SizedBox(height: 80.0), // Espacio para el FAB
       ],
     );
   }

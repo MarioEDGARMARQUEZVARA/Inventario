@@ -278,6 +278,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                     border: OutlineInputBorder(),
                   ),
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                  keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -287,6 +288,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                     border: OutlineInputBorder(),
                   ),
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                  keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -364,6 +366,8 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Mantenimiento agregado correctamente')),
                       );
+                      
+                      // CORREGIDO: Regresar a la pantalla anterior (MantenimientoScreen)
                       Navigator.pop(context);
                     }
                   },

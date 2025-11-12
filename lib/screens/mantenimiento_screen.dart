@@ -120,6 +120,7 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
     );
   }
 
+  // En la parte donde se muestran los mantenimientos, asegurar que se muestren TODOS los estados
   Widget _buildBody(List<Mantenimiento> mantenimientos, String selectedField) {
     final sessionProvider = Provider.of<SessionProvider>(context);
     
@@ -239,52 +240,55 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
                           style:
                               const TextStyle(color: Colors.grey, fontSize: 14),
                         ),
-                        // AGREGAR ICONO DE PALOMITA Y CONTADOR SI ESTÁ REPARADO - CORREGIDO
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Mostrar contador de envíos a mantenimiento si existe
-                            if (m.contador > 0)
-                              Padding(
-                                padding: const EdgeInsets.only(right: 8.0),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.build, color: Colors.blue, size: 16),
-                                    const SizedBox(width: 2),
-                                    Text(
-                                      '${m.contador}',
-                                      style: const TextStyle(
-                                        color: Colors.blue,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            // Mostrar icono de palomita y contador de reparaciones - CORREGIDO
-                            if (m.estado.toLowerCase() == "reparado") 
-                              Row(
+                      // MOSTRAR ICONOS PARA TODOS LOS ESTADOS
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Mostrar contador de envíos a mantenimiento si existe
+                          if (m.contador > 0)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.check_circle, color: Colors.green, size: 24),
-                                  if (m.contadorReparaciones > 0)
-                                    Padding(
-                                      padding: const EdgeInsets.only(left: 4.0),
-                                      child: Text(
-                                        '${m.contadorReparaciones}',
-                                        style: const TextStyle(
-                                          color: Colors.green,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                        ),
-                                      ),
+                                  const Icon(Icons.build, color: Colors.blue, size: 16),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    '${m.contador}',
+                                    style: const TextStyle(
+                                      color: Colors.blue,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
                                     ),
+                                  ),
                                 ],
                               ),
-                          ],
-                        ),
+                            ),
+                          // Mostrar icono de palomita y contador de reparaciones si está reparado
+                          if (m.estado.toLowerCase() == "reparado") 
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.check_circle, color: Colors.green, size: 24),
+                                if (m.contadorReparaciones > 0)
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 4.0),
+                                    child: Text(
+                                      '${m.contadorReparaciones}',
+                                      style: const TextStyle(
+                                        color: Colors.green,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          // Mostrar icono de reloj si está en mantenimiento
+                          if (m.estado.toLowerCase() == "en mantenimiento")
+                            const Icon(Icons.access_time, color: Colors.orange, size: 24),
+                        ],
+                      ),
                         onTap: sessionProvider.showTimeoutDialog 
                             ? null 
                             : () {
@@ -302,6 +306,46 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
                   },
                 ),
         ),
+        // PAGINACIÓN MOVIDA ARRIBA DEL BOTÓN EXPORTAR
+        if (totalPages > 1 && !sessionProvider.showTimeoutDialog)
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ElevatedButton(
+                  onPressed: currentPage > 0
+                      ? () {
+                          setState(() {
+                            currentPage--;
+                          });
+                        }
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2A1AFF),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text("Anterior"),
+                ),
+                Text("Página ${currentPage + 1} de $totalPages"),
+                ElevatedButton(
+                  onPressed: currentPage < totalPages - 1
+                      ? () {
+                          setState(() {
+                            currentPage++;
+                          });
+                        }
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2A1AFF),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text("Siguiente"),
+                ),
+              ],
+            ),
+          ),
+        // BOTÓN EXPORTAR
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: SizedBox(
@@ -328,37 +372,7 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
             ),
           ),
         ),
-        // Controles de paginación
-        if (totalPages > 1 && !sessionProvider.showTimeoutDialog)
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                ElevatedButton(
-                  onPressed: currentPage > 0
-                      ? () {
-                          setState(() {
-                            currentPage--;
-                          });
-                        }
-                      : null,
-                  child: const Text("Anterior"),
-                ),
-                Text("Página ${currentPage + 1} de $totalPages"),
-                ElevatedButton(
-                  onPressed: currentPage < totalPages - 1
-                      ? () {
-                          setState(() {
-                            currentPage++;
-                          });
-                        }
-                      : null,
-                  child: const Text("Siguiente"),
-                ),
-              ],
-            ),
-          ),
+        const SizedBox(height: 16.0), // Espacio adicional
       ],
     );
   }
