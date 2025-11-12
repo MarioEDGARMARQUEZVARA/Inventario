@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:inventario_proyecto/models/transformadoresxzona.dart';
 import 'package:inventario_proyecto/services/transformadoresxzona_service.dart';
+import 'package:inventario_proyecto/services/mantenimiento_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TransformadoresxZonaProvider extends ChangeNotifier {
   List<TransformadoresXZona> _allTransformadores = [];
@@ -41,7 +43,7 @@ class TransformadoresxZonaProvider extends ChangeNotifier {
 
     _filteredTransformadores = _allTransformadores.where((t) {
       switch (filter) {
-        case 'capacidadKVA':
+        case 'Capacidad':
           final cap = t.capacidadKVA;
           final range = value.split('-');
           final min = double.tryParse(range[0]) ?? 0;
@@ -58,7 +60,7 @@ class TransformadoresxZonaProvider extends ChangeNotifier {
         case 'Marca':
           return t.marca == value;
 
-        case 'Estado': // CAMBIADO: Status -> Estado
+        case 'Estado':
           return t.estado.toLowerCase() == value.toLowerCase();
 
         case 'Peso':
@@ -96,8 +98,8 @@ class TransformadoresxZonaProvider extends ChangeNotifier {
     try {
       final result = await addTransformador(nuevo);
       if (result == 200) {
-        _allTransformadores.add(nuevo);
-        _filteredTransformadores = List.from(_allTransformadores);
+        // Recargar datos para incluir el nuevo registro
+        await fetchTransformadores(nuevo.zona);
         notifyListeners();
       }
     } catch (e) {
@@ -136,16 +138,24 @@ class TransformadoresxZonaProvider extends ChangeNotifier {
     }
   }
 
-  /// ✅ Enviar a mantenimiento
+  /// ✅ Enviar a mantenimiento CON CONTADOR Y ACTUALIZACIÓN AUTOMÁTICA
   Future<int> enviarAMantenimientoProvider(String id, String motivo) async {
     try {
+      // 1. Enviar a mantenimiento usando el servicio actualizado
       final result = await enviarAMantenimientoZona(id, motivo);
+      
       if (result == 200) {
-        // Marcar como enviado a mantenimiento en lugar de eliminar
-        final transformador = _allTransformadores.firstWhere((t) => t.id == id);
-        transformador.enviadoMantenimiento = true;
-        transformador.fechaEnvioMantenimiento = DateTime.now();
-        notifyListeners();
+        // 2. Actualizar la lista local inmediatamente
+        final transformadorIndex = _allTransformadores.indexWhere((t) => t.id == id);
+        if (transformadorIndex != -1) {
+          // Incrementar contador localmente
+          _allTransformadores[transformadorIndex].contadorEnviosMantenimiento = 
+              (_allTransformadores[transformadorIndex].contadorEnviosMantenimiento ?? 0) + 1;
+          _allTransformadores[transformadorIndex].enviadoMantenimiento = true;
+          
+          _filteredTransformadores = List.from(_allTransformadores);
+          notifyListeners();
+        }
       }
       return result;
     } catch (e) {

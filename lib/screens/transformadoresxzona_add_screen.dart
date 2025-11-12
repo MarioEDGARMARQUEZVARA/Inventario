@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:inventario_proyecto/models/transformadoresxzona.dart';
 import 'package:inventario_proyecto/services/transformadoresxzona_service.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../providers/session_provider.dart';
+import '../widgets/inactivity_detector.dart';
+import '../widgets/main_drawer.dart';
 
 class TransformadoresxzonaAddScreen extends StatefulWidget {
   final String? zona;
@@ -13,6 +17,7 @@ class TransformadoresxzonaAddScreen extends StatefulWidget {
 
 class _TransformadoresxzonaAddScreenState extends State<TransformadoresxzonaAddScreen> {
   final _formKey = GlobalKey<FormState>();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   final numEconomicoController = TextEditingController();
   final marcaController = TextEditingController();
@@ -69,16 +74,22 @@ class _TransformadoresxzonaAddScreenState extends State<TransformadoresxzonaAddS
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Transformador agregado correctamente')),
     );
+    
+    // CORREGIDO: Regresar a la pantalla anterior
     Navigator.pop(context);
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildNormalContent() {
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         title: const Text('Agregar Transformador'),
         backgroundColor: const Color(0xFF2A1AFF),
         foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -233,6 +244,106 @@ class _TransformadoresxzonaAddScreenState extends State<TransformadoresxzonaAddS
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTimeoutContent() {
+    return Scaffold(
+      key: _scaffoldKey,
+      appBar: AppBar(
+        title: const Text('Agregar Transformador'),
+        backgroundColor: Colors.orange,
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.menu, color: Colors.white),
+          onPressed: () {
+            _scaffoldKey.currentState?.openDrawer();
+          },
+        ),
+      ),
+      drawer: const MainDrawer(),
+      body: Container(
+        color: Colors.white,
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.timer,
+              size: 80,
+              color: Colors.orange,
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              '¡Sesión por expirar!',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.orange,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Consumer<SessionProvider>(
+              builder: (context, sessionProvider, child) {
+                return Text(
+                  'Tiempo restante: ${sessionProvider.countdownSeconds} segundos',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Abre el menú lateral para extender tu sesión',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            _buildDisabledButton('Guardar Transformador', Colors.blue[700]!),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDisabledButton(String text, Color color) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color.withOpacity(0.5),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+        ),
+        onPressed: null,
+        child: Text(text, style: const TextStyle(color: Colors.white54, fontSize: 16)),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<SessionProvider>(
+      builder: (context, sessionProvider, child) {
+        // Cerrar teclado cuando entra en modo timeout
+        if (sessionProvider.showTimeoutDialog) {
+          FocusScope.of(context).unfocus();
+        }
+
+        return InactivityDetector(
+          child: sessionProvider.showTimeoutDialog 
+              ? _buildTimeoutContent()
+              : _buildNormalContent(),
+        );
+      },
     );
   }
 }
