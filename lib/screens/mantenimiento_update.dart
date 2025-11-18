@@ -63,7 +63,6 @@ class _MantenimientoUpdateScreenState extends State<MantenimientoUpdateScreen> {
     rtFaseCController = TextEditingController(text: m.rt_fase_c?.toString() ?? '');
     serieController = TextEditingController(text: m.serie);
     motivoController = TextEditingController(text: m.motivo ?? '');
-
     fechaAlta = m.fecha_de_alta ?? DateTime.now();
     fechaSalida = m.fecha_de_salida_del_taller ?? DateTime.now();
     fechaFabricacion = m.fecha_fabricacion ?? DateTime.now();
@@ -192,6 +191,7 @@ class _MantenimientoUpdateScreenState extends State<MantenimientoUpdateScreen> {
                     border: OutlineInputBorder(),
                   ),
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                  keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
 
@@ -202,6 +202,7 @@ class _MantenimientoUpdateScreenState extends State<MantenimientoUpdateScreen> {
                     border: OutlineInputBorder(),
                   ),
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                  keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
 
@@ -222,6 +223,7 @@ class _MantenimientoUpdateScreenState extends State<MantenimientoUpdateScreen> {
                     border: OutlineInputBorder(),
                   ),
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                  keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
 
@@ -232,6 +234,7 @@ class _MantenimientoUpdateScreenState extends State<MantenimientoUpdateScreen> {
                     border: OutlineInputBorder(),
                   ),
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                  keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
 
@@ -295,6 +298,8 @@ class _MantenimientoUpdateScreenState extends State<MantenimientoUpdateScreen> {
                     labelText: 'RT. FASE A',
                     border: OutlineInputBorder(),
                   ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                  keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
 
@@ -304,6 +309,8 @@ class _MantenimientoUpdateScreenState extends State<MantenimientoUpdateScreen> {
                     labelText: 'RT. FASE B',
                     border: OutlineInputBorder(),
                   ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                  keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
 
@@ -313,6 +320,8 @@ class _MantenimientoUpdateScreenState extends State<MantenimientoUpdateScreen> {
                     labelText: 'RT. FASE C',
                     border: OutlineInputBorder(),
                   ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                  keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
 
@@ -322,6 +331,8 @@ class _MantenimientoUpdateScreenState extends State<MantenimientoUpdateScreen> {
                     labelText: 'Resistencia de Aislamiento',
                     border: OutlineInputBorder(),
                   ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                  keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
 
@@ -331,6 +342,8 @@ class _MantenimientoUpdateScreenState extends State<MantenimientoUpdateScreen> {
                     labelText: 'Rigidez Dieléctrica',
                     border: OutlineInputBorder(),
                   ),
+                  validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                  keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
 

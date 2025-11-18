@@ -93,7 +93,6 @@ class _TransformadoresActualesOperationsScreenState extends State<Transformadore
           Text('Fecha de entrega: ${_formatDate(widget.transformador.fecha_entrega_almacen)}'),
           Text('Salida a mantenimiento mayor: ${widget.transformador.salida_mantenimiento ? "Sí" : "No"}'),
           Text('Fecha de salida a mantenimiento mayor: ${widget.transformador.fecha_salida_mantenimiento != null ? _formatDate(widget.transformador.fecha_salida_mantenimiento!) : "N/A"}'),
-          // CAMBIO: Mostrar "Sí" o "No" según el valor booleano de baja
           Text('Baja: ${widget.transformador.baja ? "Sí" : "No"}'),
           Text('Cargas: ${widget.transformador.cargas}'),
           const SizedBox(height: 24),

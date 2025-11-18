@@ -455,7 +455,7 @@ Future<void> _guardarTransformador() async {
                       labelText: 'Motivo',
                       border: OutlineInputBorder(),
                     ),
-                    validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                   
                   ),
                   const SizedBox(height: 16),
                 ],

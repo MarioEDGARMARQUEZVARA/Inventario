@@ -102,6 +102,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                     border: OutlineInputBorder(),
                   ),
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                  keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
                 InkWell(
@@ -155,6 +156,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                     border: OutlineInputBorder(),
                   ),
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                  keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -164,6 +166,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                     border: OutlineInputBorder(),
                   ),
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                  keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -182,6 +185,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                     border: OutlineInputBorder(),
                   ),
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                  keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -191,6 +195,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                     border: OutlineInputBorder(),
                   ),
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                  keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
                 InkWell(
@@ -251,6 +256,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                     border: OutlineInputBorder(),
                   ),
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                  keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -260,6 +266,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                     border: OutlineInputBorder(),
                   ),
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                  keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -269,6 +276,7 @@ class _MantenimientoAddScreenState extends State<MantenimientoAddScreen> {
                     border: OutlineInputBorder(),
                   ),
                   validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
+                  keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
