@@ -7,6 +7,7 @@ import 'package:inventario_proyecto/services/transformadoresxzona_service.dart';
 import 'package:provider/provider.dart';
 import '../providers/session_provider.dart';
 import '../widgets/inactivity_detector.dart';
+import '../widgets/main_drawer.dart';
 
 class TransformadoresxzonaMembersScreen extends StatefulWidget {
   final String zona;
@@ -137,6 +138,21 @@ class _TransformadoresxzonaMembersScreenState
           ),
           iconTheme: const IconThemeData(color: Colors.white),
           elevation: 0,
+          leading: sessionProvider.showTimeoutDialog
+              ? Builder(
+                  builder: (context) => IconButton(
+                    icon: const Icon(Icons.menu),
+                    onPressed: () {
+                      Scaffold.of(context).openDrawer();
+                    },
+                  ),
+                )
+              : IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
           actions: [
             Consumer<TransformadoresxZonaProvider>(
               builder: (context, provider, child) {
@@ -320,25 +336,49 @@ class _TransformadoresxzonaMembersScreenState
                                     },
                                   )),
                       ),
-                      // PAGINACIÓN MOVIDA ARRIBA DEL BOTÓN EXPORTAR
-                      if (totalPages > 1 && !sessionProvider.showTimeoutDialog)
+                      // PAGINACIÓN SIEMPRE VISIBLE
+                      if (totalPages > 1)
                         Container(
                           padding: const EdgeInsets.all(8.0),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              IconButton(
-                                icon: const Icon(Icons.arrow_back),
-                                onPressed: currentPage > 0
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: sessionProvider.showTimeoutDialog
+                                      ? Colors.grey
+                                      : const Color(0xFF2A1AFF),
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                onPressed: (currentPage > 0 && !sessionProvider.showTimeoutDialog)
                                     ? () => setState(() => currentPage--)
                                     : null,
+                                child: const Text('Anterior'),
                               ),
-                              Text("Página ${currentPage + 1} de $totalPages"),
-                              IconButton(
-                                icon: const Icon(Icons.arrow_forward),
-                                onPressed: currentPage < totalPages - 1
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                child: Text(
+                                  "Página ${currentPage + 1} de $totalPages",
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: sessionProvider.showTimeoutDialog
+                                      ? Colors.grey
+                                      : const Color(0xFF2A1AFF),
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                onPressed: (currentPage < totalPages - 1 && !sessionProvider.showTimeoutDialog)
                                     ? () => setState(() => currentPage++)
                                     : null,
+                                child: const Text('Siguiente'),
                               ),
                             ],
                           ),
@@ -381,6 +421,7 @@ class _TransformadoresxzonaMembersScreenState
             );
           },
         ),
+        drawer: const MainDrawer(),
         floatingActionButton: sessionProvider.showTimeoutDialog
             ? FloatingActionButton(
                 backgroundColor: Colors.orange,

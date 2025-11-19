@@ -207,72 +207,75 @@ class _TransformadoresxzonaScreenState
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
-                padding: const EdgeInsets.only(bottom: 80.0), // Ajustar padding
+                padding: const EdgeInsets.only(bottom: 80.0),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // PAGINACIÓN PRIMERO
-                    if (!sessionProvider.showTimeoutDialog)
-                      StreamBuilder<List<TransformadoresXZona>>(
-                        stream: transformadoresxzonaStream(),
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData) return const SizedBox();
-                          final data = snapshot.data!;
-                          final zonas = <String, List<TransformadoresXZona>>{};
-                          for (var t in data) {
-                            zonas.putIfAbsent(t.zona, () => []).add(t);
-                          }
-                          final zonaEntries = applyFilter(zonas);
-                          final totalPages =
-                              (zonaEntries.length / itemsPerPage).ceil().clamp(1, 999);
+                    // PAGINACIÓN SIEMPRE VISIBLE
+                    StreamBuilder<List<TransformadoresXZona>>(
+                      stream: transformadoresxzonaStream(),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) return const SizedBox();
+                        final data = snapshot.data!;
+                        final zonas = <String, List<TransformadoresXZona>>{};
+                        for (var t in data) {
+                          zonas.putIfAbsent(t.zona, () => []).add(t);
+                        }
+                        final zonaEntries = applyFilter(zonas);
+                        final totalPages =
+                            (zonaEntries.length / itemsPerPage).ceil().clamp(1, 999);
 
-                          if (totalPages <= 1) return const SizedBox();
+                        if (totalPages <= 1) return const SizedBox();
 
-                          return Container(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                ElevatedButton(
-                                  onPressed: currentPage > 0
-                                      ? () {
-                                          setState(() {
-                                            currentPage--;
-                                          });
-                                        }
-                                      : null,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF2A1AFF),
-                                    foregroundColor: Colors.white,
-                                  ),
-                                  child: const Text("Anterior"),
+                        return Container(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              ElevatedButton(
+                                onPressed: (currentPage > 0 && !sessionProvider.showTimeoutDialog)
+                                    ? () {
+                                        setState(() {
+                                          currentPage--;
+                                        });
+                                      }
+                                    : null,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: sessionProvider.showTimeoutDialog
+                                      ? Colors.grey
+                                      : const Color(0xFF2A1AFF),
+                                  foregroundColor: Colors.white,
                                 ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                                  child: Text(
-                                    "Página ${currentPage + 1} de $totalPages",
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
-                                  ),
+                                child: const Text("Anterior"),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                child: Text(
+                                  "Página ${currentPage + 1} de $totalPages",
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
                                 ),
-                                ElevatedButton(
-                                  onPressed: currentPage < totalPages - 1
-                                      ? () {
-                                          setState(() {
-                                            currentPage++;
-                                          });
-                                        }
-                                      : null,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF2A1AFF),
-                                    foregroundColor: Colors.white,
-                                  ),
-                                  child: const Text("Siguiente"),
+                              ),
+                              ElevatedButton(
+                                onPressed: (currentPage < totalPages - 1 && !sessionProvider.showTimeoutDialog)
+                                    ? () {
+                                        setState(() {
+                                          currentPage++;
+                                        });
+                                      }
+                                    : null,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: sessionProvider.showTimeoutDialog
+                                      ? Colors.grey
+                                      : const Color(0xFF2A1AFF),
+                                  foregroundColor: Colors.white,
                                 ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
+                                child: const Text("Siguiente"),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                     const SizedBox(height: 12),
                     // BOTÓN EXPORTAR DESPUÉS
                     SizedBox(
