@@ -306,15 +306,14 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
                   },
                 ),
         ),
-        // PAGINACIÓN MOVIDA ARRIBA DEL BOTÓN EXPORTAR
-        if (totalPages > 1 && !sessionProvider.showTimeoutDialog)
+        if (totalPages > 1)
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 ElevatedButton(
-                  onPressed: currentPage > 0
+                  onPressed: (currentPage > 0 && !sessionProvider.showTimeoutDialog)
                       ? () {
                           setState(() {
                             currentPage--;
@@ -322,14 +321,16 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
                         }
                       : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2A1AFF),
+                    backgroundColor: sessionProvider.showTimeoutDialog
+                        ? Colors.grey
+                        : const Color(0xFF2A1AFF),
                     foregroundColor: Colors.white,
                   ),
                   child: const Text("Anterior"),
                 ),
                 Text("Página ${currentPage + 1} de $totalPages"),
                 ElevatedButton(
-                  onPressed: currentPage < totalPages - 1
+                  onPressed: (currentPage < totalPages - 1 && !sessionProvider.showTimeoutDialog)
                       ? () {
                           setState(() {
                             currentPage++;
@@ -337,7 +338,9 @@ class _MantenimientoScreenState extends State<MantenimientoScreen> {
                         }
                       : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2A1AFF),
+                    backgroundColor: sessionProvider.showTimeoutDialog
+                        ? Colors.grey
+                        : const Color(0xFF2A1AFF),
                     foregroundColor: Colors.white,
                   ),
                   child: const Text("Siguiente"),
